@@ -2,7 +2,7 @@
   "name": "@iam-kevin/nena-converse",
   "version": "0.1.0",
   "description": "Creating Conversational Agents (Nena Converse agents)",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "tsc": "npx tsc -p .",
     "run": "node dist/index.js",
