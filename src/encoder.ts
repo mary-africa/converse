@@ -13,11 +13,14 @@ export async function encode<IntentType extends string>(message: string, intentD
 
     const response = await axios({
         method: 'POST',
-        url: `${process.env.BASE_NENA_AI_SERVER}/tasks/intents/knn`,
+        url: `${process.env.NENA_API_BASE_URL}/api/tasks/intents/knn`,
         data: JSON.stringify({
-            text: message,
-            intentions,
-            intent_texts: intentions.map(x => intentData[x])
+            apiKey: process.env.NENA_API_KEY,
+            payload: {
+                text: message,
+                intentions,
+                intent_texts: intentions.map(x => intentData[x])
+            }
         }),
         headers: {
             'content-type': 'application/json; text-charset=utf-8'
