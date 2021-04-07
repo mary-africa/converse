@@ -1,6 +1,5 @@
-import produce from 'immer'
 import { WritableDraft } from 'immer/dist/internal'
-import { DialogueSequenceMarker } from '../typings'
+import { DialogueSequenceMarker } from './typings/index.d'
 import { encode } from './encoder'
 import { InputOptions } from './typings/dialogue'
 
@@ -9,7 +8,7 @@ const levenshtein = require('js-levenshtein');
 /**
  * Updates the state / memory used to convey context in
  * the chat.
- * 
+ *
  * This contains the rules for how the state is updated
  * in the chat
  */
