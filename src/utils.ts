@@ -30,7 +30,7 @@ export function stateUpdater<TState, TEncodeVal, TDialogueSequence>(
  */
 const DEFAULT_INDEX = 0
 
-export const nlpMatchRule = (baseNenaApi: string | undefined = process.env.NENA_API_BASE_URL, apiKey: string | undefined = process.env.NENA_API_KEY) => async (message: string, options: InputOptions) => {
+export const nlpMatchRule = (baseNenaApi: string, apiKey: string) => async (message: string, options: InputOptions) => {
      const optDataMap: {[x: string]: Array<string>} = {}
      const dataIndices: {[x: string]: number} = {}
      
