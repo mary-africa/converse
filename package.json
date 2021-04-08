@@ -7,7 +7,8 @@
     "tsc": "npx tsc -p .",
     "run": "node dist/index.js",
     "build": "yarn run tsc",
-    "test": "jest"
+    "test": "jest",
+    "prepublish": "yarn build"
   },
   "repository": {
     "type": "git",
