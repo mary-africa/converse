@@ -12,8 +12,10 @@ export * from './utils'
 
 export default function StatelessConverseAgent <IntentType extends string, NevermindIntentType extends IntentType, AllDialogueNode> (
     ddo: IDialogueDefinitionObject<IntentType, NevermindIntentType>, 
-    baseNenaApi: string, 
-    apiKey: string) {
+    apiInfo: {
+        baseNenaApi: string, 
+        apiKey: string
+    }) {
     // code to make sure that the needed values exist
     /// if !('intentions' in ddo)
     /**
@@ -22,6 +24,7 @@ export default function StatelessConverseAgent <IntentType extends string, Never
      * @returns Matched intent
      */
     const encodeMessage = async (message: string): Promise<IntentType> => {
+        const { baseNenaApi, apiKey } = apiInfo
         const _encoding = await Encode<IntentType>(message, ddo.intentionTexts, baseNenaApi, apiKey)
 
         if (_encoding === null) {
@@ -61,7 +64,7 @@ export default function StatelessConverseAgent <IntentType extends string, Never
     // Build a responder
     // -------------------------------------
 
-    const responder = Responder(ddo.responses, DialogueSequences, DialogueMap)
+    const responder = Responder(ddo.responses, DialogueSequences, DialogueMap, apiInfo)
     type StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode> = { message: string, state: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode> }
 
     return ({

@@ -89,7 +89,8 @@ interface IResponseBuilder<IntentType, ActionSequenceDialogueKey, AllDNodeType> 
 export function Responder <IntentType extends string, ActionSequenceDialogueKey extends string, AllDNodeType>(
     intentResponseMap: { [x in IntentType]: string }, 
     dialogSequences: { [x in IntentType]: ActionSequenceDialogueKey[] | null },
-    dialogMap: { [x in ActionSequenceDialogueKey]: DialogueObjectType<AllDNodeType> }
+    dialogMap: { [x in ActionSequenceDialogueKey]: DialogueObjectType<AllDNodeType> },
+    apiInfo: { apiKey: string, baseNenaApi: string }
 ): IResponseBuilder<IntentType, ActionSequenceDialogueKey, AllDNodeType> {
 
     return ({
@@ -137,9 +138,15 @@ export function Responder <IntentType extends string, ActionSequenceDialogueKey 
                 return createDefaultResponse(encoded)
             }
 
+            const {baseNenaApi, apiKey} = apiInfo
+
             // create dialogue selector
-            // @ts-ignore
-            const selector = DialogueSelector(selectedSequence, dialogMap)
+            const selector = DialogueSelector(
+                //@ts-ignore
+                selectedSequence,
+                dialogMap, {
+                    baseNenaApi, apiKey
+                })
             console.log("Here! PATH")
 
             // default markers
