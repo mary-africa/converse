@@ -8,7 +8,7 @@
     "tsc": "npx tsc -p .",
     "build": "yarn run tsc",
     "test": "jest",
-    "prepublish": "yarn build"
+    "preinstall": "yarn build"
   },
   "repository": {
     "type": "git",
