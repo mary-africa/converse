@@ -1,6 +1,6 @@
 {
   "name": "@nena/converse",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Creating Conversational Agents (Nena Converse agents)",
   "main": "dist/index.js",
   "types": "./typings",
