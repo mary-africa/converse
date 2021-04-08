@@ -65,7 +65,7 @@ export default function StatelessConverseAgent <IntentType extends string, Never
     type StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode> = { message: string, state: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode> }
 
     return ({
-        respond: async (message: string, state: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode>): Promise<StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode>> => {
+        respond: async (message: string, state: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode> = {}): Promise<StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode>> => {
             let _encoded = await encodeMessage(message)
 
             const { prevSequenceDialogue: prevSequence = null, action, history } = state
