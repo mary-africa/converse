@@ -1,9 +1,9 @@
-import { IDialogueDefinitionObject } from './typings/ddo'
+import { IDialogueDefinitionObject } from '../typings/ddo'
 import { encode as Encode } from './core/encoder'
 import { Responder } from './core/decoder'
-import { DialogueObjectType } from './typings/core'
+import { DialogueObjectType } from '../typings/core'
 import { DialogueObject } from './core'
-import { ChatState, DialogueSequenceMarker } from './typings'
+import { ChatState, DialogueSequenceMarker } from '../typings'
 
 import produce from 'immer'
 import { Draft } from 'immer/dist/internal'

@@ -1,8 +1,8 @@
-import { Dialogue as IDialogueDefinition, DialogueCallback, DialogueItem, InputOption } from '../typings/dialogue'
+import { Dialogue as IDialogueDefinition, DialogueCallback, DialogueItem, InputOption } from '../../typings/dialogue'
 import { nlpMatchRule as ApiNlpMatchRule, levenshteinMatchRule } from '../utils'
 
-import { DialogueSequenceMarker } from '../typings/index.d'
-import { IDialogueNode, DialogueObjectType, IDialogueSelector } from '../typings/core.d'
+import { DialogueSequenceMarker } from '../../typings'
+import { IDialogueNode, DialogueObjectType, IDialogueSelector } from '../../typings/core'
 
 /**
  * Build the dialogue object from definition to construct certain things
