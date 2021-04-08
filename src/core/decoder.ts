@@ -1,12 +1,13 @@
-import { ChatState, DialogueSequenceMarker } from "./typings/index.d"
-import { IDialogueNode, DialogueObjectType, DialogueSelector } from "./core/dialogue"
-import { DialogueCallback } from "./typings/dialogue"
+import { ChatState, DialogueSequenceMarker } from "../typings"
+import { DialogueSelector } from "./dialogue"
+import { DialogueCallback } from "../typings/dialogue"
+import { DialogueObjectType, IDialogueNode } from '../typings/core'
 
 /**
  * Checks if the intention has 
  * a sequence to intiate dialogue
  */
- export function intentHasSequence<IntentType extends string, DialogueKey>(
+export function intentHasSequence<IntentType extends string, DialogueKey>(
     encoding: IntentType, 
     intentSequenceMap: { 
         [key in IntentType]: Array<DialogueKey> | null 
@@ -77,6 +78,7 @@ interface Response<SNodeType>{
 }
 
 interface IResponseBuilder<IntentType, ActionSequenceDialogueKey, AllDNodeType> {
+    baseResponse: (encoding: IntentType | string, defaultString: string) => string
     buildResponse: (encoding: IntentType, message: string, state: ChatState<IntentType, ActionSequenceDialogueKey, AllDNodeType>) => Promise<Response<AllDNodeType>>
 }
 
@@ -91,6 +93,9 @@ export function Responder <IntentType extends string, ActionSequenceDialogueKey 
 ): IResponseBuilder<IntentType, ActionSequenceDialogueKey, AllDNodeType> {
 
     return ({
+        baseResponse: (intent: IntentType | string, defaultString = "Default text"): string => {
+            return intentResponseMap[intent as IntentType] || defaultString
+        },
         buildResponse: async (encoding, message, state) => {
             /**
              * Information
@@ -98,8 +103,7 @@ export function Responder <IntentType extends string, ActionSequenceDialogueKey 
              * context for building response
              */
             const {
-                action: prevEncoding, 
-                history = undefined, 
+                action: prevEncoding,
                 prevSequenceDialogue = null, 
                 sequenceDialogue = null 
             } = state
@@ -110,10 +114,6 @@ export function Responder <IntentType extends string, ActionSequenceDialogueKey 
                 sequenceDialogue: () => null,
                 nextSequenceDialogue: () => null
             })
-
-            const defaultHandler: DialogueCallback = async (input) => {
-                console.log("This is the default handler - message: ", input)
-            }
 
             // Gets the proper encoded value
             //  to build response with

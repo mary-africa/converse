@@ -1,22 +1,13 @@
 import { Dialogue as IDialogueDefinition, DialogueCallback, DialogueItem, InputOption } from '../typings/dialogue'
+import { nlpMatchRule as ApiNlpMatchRule, levenshteinMatchRule } from '../utils'
+
 import { DialogueSequenceMarker } from '../typings/index.d'
-import { nlpMatchRule, levenshteinMatchRule } from '../utils'
-
-export interface IDialogueNode<DNodeType> {
-    key: DNodeType,
-    getText: () => string,
-    next: () => DNodeType | string | null
-    execute: DialogueCallback,
-    matchInput: (input: string) => Promise<{[x: string]: string}>
-    nextStaticNodeKey: (valObj: {[valKey in string]: InputOption}) => DNodeType | null
-}
-
+import { IDialogueNode, DialogueObjectType, IDialogueSelector } from '../typings/core.d'
 
 /**
  * Build the dialogue object from definition to construct certain things
  * @param dialogueDefinition definition object with the information
  */
-export type DialogueObjectType<DNode> = IDialogueDefinition<DNode>
 export const DialogueObject = <DNode> (dialogueDefinition: IDialogueDefinition<DNode>): DialogueObjectType<DNode> => {
     // get the concerned dialog
     return dialogueDefinition
@@ -25,7 +16,9 @@ export const DialogueObject = <DNode> (dialogueDefinition: IDialogueDefinition<D
 /**
  * 
  */
-export const DialogueNode = <DNode> (key: DNode, item: DialogueItem<DNode>): IDialogueNode<DNode> => {
+
+export const InitDialogueNode = (baseNenaApi: string, apiKey: string) => <DNode> (key: DNode, item: DialogueItem<DNode>) => BaseDialogueNode(key, item, baseNenaApi, apiKey)
+const BaseDialogueNode = <DNode> (key: DNode, item: DialogueItem<DNode>, baseNenaApi: string, apiKey: string): IDialogueNode<DNode> => {
     const getText = (): string => item.q.toString().trim()
     const execute: DialogueCallback = item.callback !== undefined ? item.callback : async () => { console.log("Nothing to execute here")}
     
@@ -67,6 +60,7 @@ export const DialogueNode = <DNode> (key: DNode, item: DialogueItem<DNode>): IDi
 
                 switch (match_rule){
                     case 'nlp':
+                        const nlpMatchRule = ApiNlpMatchRule(baseNenaApi, apiKey)
                         matchOutput[name] = options[await nlpMatchRule(input, options)].toString()
                         break;
                     case 'levenstein':
@@ -124,15 +118,14 @@ export const DialogueNode = <DNode> (key: DNode, item: DialogueItem<DNode>): IDi
     })
 } 
 
-interface IDialogueSelector<DNodeType>  {
-    selectNode: (marker: DialogueSequenceMarker<DNodeType>) => IDialogueNode<DNodeType> | null
-    nextNodeMarker: (currentMarker: DialogueSequenceMarker<DNodeType>) => DialogueSequenceMarker<DNodeType | string> | null
-}
 export function DialogueSelector <DNodeType, DialogueKey extends string>(
     sequences: Array<DialogueKey>, 
     DialogueMap: { 
         [dialogueKey in DialogueKey]: DialogueObjectType<DNodeType>
-}): IDialogueSelector<DNodeType> {
+    },
+    credentials: { baseNenaApi: string, apiKey: string }
+): IDialogueSelector<DNodeType> {
+    const DialogueNode = InitDialogueNode(credentials.baseNenaApi, credentials.apiKey)
 
     const selectDialogue = (markerIndex: number): DialogueObjectType<DNodeType> | null => {
         if (markerIndex <= sequences.length - 1) {

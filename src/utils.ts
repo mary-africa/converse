@@ -1,6 +1,6 @@
 import { WritableDraft } from 'immer/dist/internal'
 import { DialogueSequenceMarker } from './typings/index.d'
-import { encode } from './encoder'
+import { encode } from './core/encoder'
 import { InputOptions } from './typings/dialogue'
 
 const levenshtein = require('js-levenshtein');
@@ -30,7 +30,7 @@ export function stateUpdater<TState, TEncodeVal, TDialogueSequence>(
  */
 const DEFAULT_INDEX = 0
 
-export const nlpMatchRule = async (message: string, options: InputOptions) => {
+export const nlpMatchRule = (baseNenaApi: string | undefined = process.env.NENA_API_BASE_URL, apiKey: string | undefined = process.env.NENA_API_KEY) => async (message: string, options: InputOptions) => {
      const optDataMap: {[x: string]: Array<string>} = {}
      const dataIndices: {[x: string]: number} = {}
      
@@ -42,7 +42,7 @@ export const nlpMatchRule = async (message: string, options: InputOptions) => {
          dataIndices[dataIndex] = ix
      })
      
-     const _encoding = await encode(message, optDataMap)
+     const _encoding = await encode(message, optDataMap, baseNenaApi, apiKey)
      
      if (_encoding === null) {
          throw new Error(`Unable to match input: \ntext: ${message} | inputs: [${options.join(", ")}]`)
