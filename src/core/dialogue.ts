@@ -142,6 +142,8 @@ export function DialogueSelector <DNodeType, DialogueKey extends string>(
      */
     const selectNode = (marker: DialogueSequenceMarker<DNodeType>): IDialogueNode<DNodeType> | null => {
         const { index, node } =  marker
+
+        console.log("Selected Marker:", marker)
         const dialogueObject = selectDialogue(index)
 
         // TODO: this should be defined in the dialog object

@@ -140,6 +140,10 @@ export function Responder <IntentType extends string, ActionSequenceDialogueKey 
 
             const {baseNenaApi, apiKey} = apiInfo
 
+            console.log("DialogueSequences:", dialogSequences)
+            console.log("Selected Sequence:", selectedSequence)
+            console.log("DialogMap:", dialogMap)
+
             // create dialogue selector
             const selector = DialogueSelector(
                 //@ts-ignore

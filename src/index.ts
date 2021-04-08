@@ -10,7 +10,7 @@ import { Draft } from 'immer/dist/internal'
   
 export * from './utils'
 
-export default function StatelessConverseAgent <IntentType extends string, NevermindIntentType extends IntentType, AllDialogueNode> (
+export default function ConverseAgent <IntentType extends string, NevermindIntentType extends IntentType, AllDialogueNode> (
     ddo: IDialogueDefinitionObject<IntentType, NevermindIntentType>, 
     apiInfo: {
         baseNenaApi: string, 
@@ -46,13 +46,13 @@ export default function StatelessConverseAgent <IntentType extends string, Never
     ddo.intentions.forEach(v => {
         const dialogue = ddo.sequences[v as IntentType]
 
-        if(dialogue !== undefined || dialogue !== null) {            
+        if(dialogue !== undefined && dialogue !== null) {            
             const SEQUENCE_DIALOG_KEY: SequenceDialogueKey= `${v}-DIALOGUE`
 
             if (!(v in DialogueSequences)) 
                 DialogueSequences[v] = [SEQUENCE_DIALOG_KEY]
 
-            if (DialogueMap[SEQUENCE_DIALOG_KEY] == undefined) {
+            if (DialogueMap[SEQUENCE_DIALOG_KEY] === undefined) {
                 DialogueMap[SEQUENCE_DIALOG_KEY] = DialogueObject(dialogue)
             }
         }
