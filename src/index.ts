@@ -12,18 +12,8 @@ export * from './utils'
 
 export default function StatelessConverseAgent <IntentType extends string, NevermindIntentType extends IntentType, AllDialogueNode> (
     ddo: IDialogueDefinitionObject<IntentType, NevermindIntentType>, 
-    baseNenaApi: string | undefined = process.env.NENA_API_BASE_URL, 
-    apiKey: string | undefined = process.env.NENA_API_KEY ) {
-    // Build the agent from the ddo
-
-    if (baseNenaApi === undefined) {
-        throw new Error("`NENA_API_BASE_URL` in missing from the environment variables or argument `baseNenaApi` is missing")
-    }
-
-    if (apiKey === undefined) {
-        throw new Error("`NENA_API_KEY` in missing from the environment variables or argument `apiKey` is missing")
-    }
-
+    baseNenaApi: string, 
+    apiKey: string) {
     // code to make sure that the needed values exist
     /// if !('intentions' in ddo)
     /**
