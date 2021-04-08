@@ -46,17 +46,14 @@ export default function StatelessConverseAgent <IntentType extends string, Never
     ddo.intentions.forEach(v => {
         const dialogue = ddo.sequences[v as IntentType]
 
-        if(dialogue !== undefined || dialogue !== null) {
-            for(let ix in dialogue) {
-                // create new name
-                const SEQUENCE_DIALOG_KEY: SequenceDialogueKey= `${v}-${ix}-SEQ`
+        if(dialogue !== undefined || dialogue !== null) {            
+            const SEQUENCE_DIALOG_KEY: SequenceDialogueKey= `${v}-DIALOGUE`
 
-                if (!(v in DialogueSequences)) 
-                    DialogueSequences[v] = [SEQUENCE_DIALOG_KEY]
+            if (!(v in DialogueSequences)) 
+                DialogueSequences[v] = [SEQUENCE_DIALOG_KEY]
 
-                if (DialogueMap[SEQUENCE_DIALOG_KEY] == undefined) {
-                    DialogueMap[SEQUENCE_DIALOG_KEY] = DialogueObject(dialogue)
-                }
+            if (DialogueMap[SEQUENCE_DIALOG_KEY] == undefined) {
+                DialogueMap[SEQUENCE_DIALOG_KEY] = DialogueObject(dialogue)
             }
         }
     })
@@ -75,7 +72,6 @@ export default function StatelessConverseAgent <IntentType extends string, Never
 
             if (prevSequence !== null) {
                 // checks first if the intent is NEVER_MIND
-                // TODO: fix this from resetting the history. this should maintain the history as well
                 if (_encoded === ddo.nevermindIntent) {
                     // Reset the context
                     return {
