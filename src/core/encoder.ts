@@ -28,7 +28,7 @@ export async function encode<IntentType extends string>(
         }
     })
 
-    const { results: intent_index, info } = response.data
+    const { results: intent_index, info } = response.data.output
     const { intents } = info
 
     if (intent_index === null) {
