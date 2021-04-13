@@ -1,4 +1,4 @@
-import { ChatState, DialogueSequenceMarker, ConverseAgent as IConverseAgent, Responder as IResponseBuilder } from '../@types'
+import { ChatState, DialogueSequenceMarker, ConverseAgent as IConverseAgent, Responder as IResponseBuilder, SequenceDialogueKey} from '../@types'
 import { IDialogueDefinitionObject } from '../@types/ddo'
 import { DialogueObjectType } from '../@types/core'
 
@@ -6,13 +6,10 @@ import { DialogueObject } from './core'
 import { encode as Encode } from './core/encoder'
 import { Responder } from './core/decoder'
 
-
 import produce from 'immer'
 import { Draft } from 'immer/dist/internal'
   
 export * from './utils'
-type SequenceDialogueKey = string
-type StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode> = { message: string, state: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode> }
 
 class ConverseAgent <IntentType extends string, NevermindIntentType extends IntentType, AllDialogueNode> implements IConverseAgent<IntentType, NevermindIntentType, AllDialogueNode> {
     public ddo: IDialogueDefinitionObject<IntentType, NevermindIntentType>

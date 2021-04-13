@@ -53,12 +53,20 @@ export type DialogueSequenceMarker<DNodeType> = {
 export interface HookedStatefulChatService<ChatState> extends BaseHookedChatService {
     messageHandler: (message: string, state: ChatState) => Promise<{ message: string, state: ChatState}>
 }
+export type SequenceDialogueKey = string
+export type StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode> = { message: string, state: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode> }
 
 export interface ConverseAgent<IT extends string, NmIT extends IT, DN> {
     ddo: IDialogueDefinitionObject<IT, NmIT>
     responder: Responder<IT, SequenceDialogueKey, DN>
     encodeMessage: (message: string) => Promise<IT>
     respond: (message: string, state: ChatState<IT, SequenceDialogueKey, DN>) => Promise<StatefulMessage<IT, SequenceDialogueKey, DN>>
+}
+
+type Response<DN> = {
+    text: string | null,
+    sequenceDialogue: null | (() => DialogueSequenceMarker<DN>),
+    nextSequenceDialogue:  null | (() => DialogueSequenceMarker<DN>)
 }
 
 export interface Responder<IntentType, ActionSequenceDialogueKey, AllDNodeType> {
