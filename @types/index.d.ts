@@ -65,8 +65,8 @@ export interface ConverseAgent<IT extends string, NmIT extends IT, DN> {
 
 type Response<DN> = {
     text: string | null,
-    sequenceDialogue: null | (() => DialogueSequenceMarker<DN>),
-    nextSequenceDialogue:  null | (() => DialogueSequenceMarker<DN>)
+    sequenceDialogue: () => (DialogueSequenceMarker<DN> | null),
+    nextSequenceDialogue: () => (DialogueSequenceMarker<DN> | null)
 }
 
 export interface Responder<IntentType, ActionSequenceDialogueKey, AllDNodeType> {

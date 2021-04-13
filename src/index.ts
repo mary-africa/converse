@@ -1,4 +1,4 @@
-import { ChatState, DialogueSequenceMarker, ConverseAgent as IConverseAgent, Responder as IResponseBuilder, SequenceDialogueKey} from '../@types'
+import { ChatState, StatefulMessage, DialogueSequenceMarker, ConverseAgent as IConverseAgent, Responder as IResponseBuilder, SequenceDialogueKey} from '../@types'
 import { IDialogueDefinitionObject } from '../@types/ddo'
 import { DialogueObjectType } from '../@types/core'
 
