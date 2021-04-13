@@ -54,9 +54,14 @@ export interface HookedStatefulChatService<ChatState> extends BaseHookedChatServ
     messageHandler: (message: string, state: ChatState) => Promise<{ message: string, state: ChatState}>
 }
 
-export interface IConverseAgent<IT extends string, NmIT extends IT, DN> {
+export interface ConverseAgent<IT extends string, NmIT extends IT, DN> {
     ddo: IDialogueDefinitionObject<IT, NmIT>
-    responder: IResponseBuilder<IT, SequenceDialogueKey, DN>
+    responder: Responder<IT, SequenceDialogueKey, DN>
     encodeMessage: (message: string) => Promise<IT>
     respond: (message: string, state: ChatState<IT, SequenceDialogueKey, DN>) => Promise<StatefulMessage<IT, SequenceDialogueKey, DN>>
+}
+
+export interface Responder<IntentType, ActionSequenceDialogueKey, AllDNodeType> {
+    baseResponse: (encoding: IntentType | string, defaultString: string) => string
+    buildResponse: (encoding: IntentType, message: string, state: ChatState<IntentType, ActionSequenceDialogueKey, AllDNodeType>) => Promise<Response<AllDNodeType>>
 }

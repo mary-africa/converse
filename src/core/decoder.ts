@@ -1,6 +1,5 @@
-import { ChatState, DialogueSequenceMarker } from "../../@types"
+import { ChatState, DialogueSequenceMarker, Responder as IResponder } from "../../@types"
 import { DialogueSelector } from "./dialogue"
-import { DialogueCallback } from "../../@types/dialogue"
 import { DialogueObjectType, IDialogueNode } from '../../@types/core'
 
 /**
@@ -77,17 +76,13 @@ interface Response<SNodeType>{
     nextSequenceDialogue: () => (DialogueSequenceMarker<SNodeType | string> | null)
 }
 
-export interface IResponseBuilder<IntentType, ActionSequenceDialogueKey, AllDNodeType> {
-    baseResponse: (encoding: IntentType | string, defaultString: string) => string
-    buildResponse: (encoding: IntentType, message: string, state: ChatState<IntentType, ActionSequenceDialogueKey, AllDNodeType>) => Promise<Response<AllDNodeType>>
-}
 
 
 /**
  * Build an object that can be used to 
  * create responses for particular conversation flow
  */
-export class Responder<IntentType extends string, ActionSequenceDialogueKey extends string, AllDNodeType> implements IResponseBuilder<IntentType, ActionSequenceDialogueKey, AllDNodeType> {
+export class Responder<IntentType extends string, ActionSequenceDialogueKey extends string, AllDNodeType> implements IResponder<IntentType, ActionSequenceDialogueKey, AllDNodeType> {
     private intentResponseMap: { [x in IntentType]: string };
     private dialogSequences: { [x in IntentType]: ActionSequenceDialogueKey[] | null };
     private dialogMap: { [x in ActionSequenceDialogueKey]: DialogueObjectType<AllDNodeType> };
@@ -208,3 +203,5 @@ export class Responder<IntentType extends string, ActionSequenceDialogueKey exte
         })
     }
 }
+
+export default Responder
