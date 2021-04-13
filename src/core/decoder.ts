@@ -77,141 +77,134 @@ interface Response<SNodeType>{
     nextSequenceDialogue: () => (DialogueSequenceMarker<SNodeType | string> | null)
 }
 
-interface IResponseBuilder<IntentType, ActionSequenceDialogueKey, AllDNodeType> {
+export interface IResponseBuilder<IntentType, ActionSequenceDialogueKey, AllDNodeType> {
     baseResponse: (encoding: IntentType | string, defaultString: string) => string
     buildResponse: (encoding: IntentType, message: string, state: ChatState<IntentType, ActionSequenceDialogueKey, AllDNodeType>) => Promise<Response<AllDNodeType>>
 }
+
 
 /**
  * Build an object that can be used to 
  * create responses for particular conversation flow
  */
-export function Responder <IntentType extends string, ActionSequenceDialogueKey extends string, AllDNodeType>(
-    intentResponseMap: { [x in IntentType]: string }, 
-    dialogSequences: { [x in IntentType]: ActionSequenceDialogueKey[] | null },
-    dialogMap: { [x in ActionSequenceDialogueKey]: DialogueObjectType<AllDNodeType> },
-    apiInfo: { apiKey: string, baseNenaApi: string }
-): IResponseBuilder<IntentType, ActionSequenceDialogueKey, AllDNodeType> {
+export class Responder<IntentType extends string, ActionSequenceDialogueKey extends string, AllDNodeType> implements IResponseBuilder<IntentType, ActionSequenceDialogueKey, AllDNodeType> {
+    private intentResponseMap: { [x in IntentType]: string };
+    private dialogSequences: { [x in IntentType]: ActionSequenceDialogueKey[] | null };
+    private dialogMap: { [x in ActionSequenceDialogueKey]: DialogueObjectType<AllDNodeType> };
+    private apiInfo: { apiKey: string, baseNenaApi: string };
 
-    return ({
-        baseResponse: (intent: IntentType | string, defaultString = "Default text"): string => {
-            return intentResponseMap[intent as IntentType] || defaultString
-        },
-        buildResponse: async (encoding, message, state) => {
-            /**
-             * Information
-             * needed to parse 
-             * context for building response
-             */
-            const {
-                action: prevEncoding,
-                prevSequenceDialogue = null, 
-                sequenceDialogue = null 
-            } = state
+    constructor (
+        intentResponseMap: { [x in IntentType]: string }, 
+        dialogSequences: { [x in IntentType]: ActionSequenceDialogueKey[] | null },
+        dialogMap: { [x in ActionSequenceDialogueKey]: DialogueObjectType<AllDNodeType> },
+        apiInfo: { apiKey: string, baseNenaApi: string }
+    ) {
+        this.apiInfo = apiInfo
+        this.dialogMap = dialogMap
+        this.dialogSequences = dialogSequences
+        this.intentResponseMap = intentResponseMap
+    }
 
+    private createDefaultResponse = (encoding: IntentType): Response<AllDNodeType> => ({
+        text: getResponse(encoding, this.intentResponseMap),
+        sequenceDialogue: () => null,
+        nextSequenceDialogue: () => null
+    })
 
-            const createDefaultResponse = (encoding: IntentType): Response<AllDNodeType> => ({
-                text: getResponse(encoding, intentResponseMap),
-                sequenceDialogue: () => null,
-                nextSequenceDialogue: () => null
+    baseResponse = (intent: IntentType | string, defaultString = "Default text") => {
+        return this.intentResponseMap[intent as IntentType] || defaultString
+    }
+
+    buildResponse = async (encoding: IntentType, message: string, state: ChatState<IntentType, ActionSequenceDialogueKey, AllDNodeType>) => {
+        /**
+         * Information
+         * needed to parse 
+         * context for building response
+         */
+        const {
+            action: prevEncoding,
+            prevSequenceDialogue = null, 
+            sequenceDialogue = null 
+        } = state
+
+        // Gets the proper encoded value
+        //  to build response with
+        const encoded = encodedState(encoding, prevEncoding, sequenceDialogue)
+
+        // check if the intent has a sequence to build
+        if (!intentHasSequence(encoded, this.dialogSequences)) {
+            // there is NO sequence
+            return this.createDefaultResponse(encoded)
+        }
+
+        // Select the dialogueSequence
+        const selectedSequence = this.dialogSequences[encoded]
+
+        // checks if the sequence has value
+        if (selectedSequence === null) {
+            return this.createDefaultResponse(encoded)
+        }
+
+        const {baseNenaApi, apiKey} = this.apiInfo
+
+        // create dialogue selector
+        const selector = DialogueSelector(
+            //@ts-ignore
+            selectedSequence,
+            this.dialogMap, {
+                baseNenaApi, apiKey
             })
 
-            // Gets the proper encoded value
-            //  to build response with
-            const encoded = encodedState(encoding, prevEncoding, sequenceDialogue)
+        // default markers
+        let marker: DialogueSequenceMarker<AllDNodeType> | null = prevSequenceDialogue
+        let nextMarker: DialogueSequenceMarker<AllDNodeType | string> = { index: 0 }
 
-            // check if the intent has a sequence to build
-            if (!intentHasSequence(encoded, dialogSequences)) {
-                // there is NO sequence
-                return createDefaultResponse(encoded)
-            }
+        // use the previous marker to build functions
+        if (sequenceDialogue !== null) { nextMarker = sequenceDialogue }
 
-            // Select the dialogueSequence
-            const selectedSequence = dialogSequences[encoded]
-            console.log("Here! ---------")
+        /**
+         * Check if the previous node is indicated
+         */
+        if (marker === null) {
+            // initiate with the next node
+            marker = nextMarker as DialogueSequenceMarker<AllDNodeType>
+        } else {
+            // execute the function of the previous node
+            const dialogueNode = selector.selectNode(marker) as IDialogueNode<AllDNodeType>
 
-            console.log("Encoded: ", encoded)
+            // match the user typed input to get output object
+            const dialogueOutput = await dialogueNode.matchInput(message)
 
-            // checks if the sequence has value
-            if (selectedSequence === null) {
-                console.log("Normally, this must never be reached")
-                return createDefaultResponse(encoded)
-            }
+            // execute function if execution is successful
+            await dialogueNode.execute(message)
 
-            const {baseNenaApi, apiKey} = apiInfo
+            // gets the static key for the next node
+            const nextNode: AllDNodeType | null = dialogueNode.nextStaticNodeKey(dialogueOutput)
 
-            console.log("DialogueSequences:", dialogSequences)
-            console.log("Selected Sequence:", selectedSequence)
-            console.log("DialogMap:", dialogMap)
-
-            // create dialogue selector
-            const selector = DialogueSelector(
-                //@ts-ignore
-                selectedSequence,
-                dialogMap, {
-                    baseNenaApi, apiKey
-                })
-            console.log("Here! PATH")
-
-            // default markers
-            let marker: DialogueSequenceMarker<AllDNodeType> | null = prevSequenceDialogue
-            let nextMarker: DialogueSequenceMarker<AllDNodeType | string> = { index: 0 }
-
-            // use the previous marker to build functions
-            if (sequenceDialogue !== null) { nextMarker = sequenceDialogue }
-
-            // Update the state for the previous sequence dialogue
-            // dialogSequenceState['prev'] = prevSequenceDialogue
-
-            // const prevDialog = selector.select(marker)
-            // const dialog = selector.select()
-
-            /**
-             * Check if the previous node is indicated
-             */
-            if (marker === null) {
-                // initiate with the next node
-                marker = nextMarker as DialogueSequenceMarker<AllDNodeType>
+            if (nextNode === null) {
+                marker = null
             } else {
-                // execute the function of the previous node
-                const dialogueNode = selector.selectNode(marker) as IDialogueNode<AllDNodeType>
-                console.log("Node has been selected")
-
-                console.log("NODE:", dialogueNode)
-                // match the user typed input to get output object
-                const dialogueOutput = await dialogueNode.matchInput(message)
-                console.log("node output matched")
-
-                // execute function if execution is successful
-                await dialogueNode.execute(message)
-                console.log("function has been exectued")
-
-                // gets the static key for the next node
-                const nextNode: AllDNodeType | null = dialogueNode.nextStaticNodeKey(dialogueOutput)
-
-                if (nextNode === null) {
-                    marker = null
-                } else {
-                    // builds the next node
-                    marker = <DialogueSequenceMarker<AllDNodeType>> {
-                        index: marker.index,
-                        node: nextNode
-                    }
+                // builds the next node
+                marker = <DialogueSequenceMarker<AllDNodeType>> {
+                    index: marker.index,
+                    node: nextNode
                 }
             }
-
-            
-            const dialogueNode = marker !== null ? selector.selectNode(marker) as IDialogueNode<AllDNodeType>: undefined
-            
-            // This is where you have reached
-            console.log("Reached the base of the pipeline!")
-
-            // the next node
-            return ({
-                text: dialogueNode !== undefined ? dialogueNode.getText(): null,
-                sequenceDialogue: () => marker,
-                nextSequenceDialogue: () => marker === null ? null : selector.nextNodeMarker(marker)
-            })
         }
-    })
+
+        
+        const dialogueNode = marker !== null ? 
+              selector.selectNode(marker) as IDialogueNode<AllDNodeType>
+            : undefined
+        
+        // This is where you have reached
+        // console.log("Reached the base of the pipeline!")
+
+        // the next node
+        return ({
+            text: dialogueNode !== undefined ? dialogueNode.getText(): null,
+            sequenceDialogue: () => marker,
+            nextSequenceDialogue: () => marker === null ? null : selector.nextNodeMarker(marker)
+        })
+    }
 }

@@ -1,4 +1,4 @@
-import { IDialogueDefinitionObject } from '../src/typings/ddo'
+import { IDialogueDefinitionObject } from '../../typings/ddo.d'
 import { IntentType } from './typings.d'
 
 // Dialogues

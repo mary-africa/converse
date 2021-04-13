@@ -1,105 +1,118 @@
-import { IDialogueDefinitionObject } from '../typings/ddo'
-import { encode as Encode } from './core/encoder'
-import { Responder } from './core/decoder'
-import { DialogueObjectType } from '../typings/core'
-import { DialogueObject } from './core'
 import { ChatState, DialogueSequenceMarker } from '../typings'
+import { IDialogueDefinitionObject } from '../typings/ddo'
+import { DialogueObjectType } from '../typings/core'
+
+import { DialogueObject } from './core'
+import { encode as Encode } from './core/encoder'
+import { Responder, IResponseBuilder } from './core/decoder'
+
 
 import produce from 'immer'
 import { Draft } from 'immer/dist/internal'
   
 export * from './utils'
+type SequenceDialogueKey = string
+type StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode> = { message: string, state: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode> }
 
-export default function ConverseAgent <IntentType extends string, NevermindIntentType extends IntentType, AllDialogueNode> (
-    ddo: IDialogueDefinitionObject<IntentType, NevermindIntentType>, 
-    apiInfo: {
-        baseNenaApi: string, 
+interface IConverseAgent<IT extends string, NmIT extends IT, DN> {
+    ddo: IDialogueDefinitionObject<IT, NmIT>
+    encodeMessage: (message: string) => Promise<IT>
+    respond: (message: string, state: ChatState<IT, SequenceDialogueKey, DN>) => Promise<StatefulMessage<IT, SequenceDialogueKey, DN>>
+}
+
+export default class ConverseAgent <IntentType extends string, NevermindIntentType extends IntentType, AllDialogueNode> implements IConverseAgent<IntentType, NevermindIntentType, AllDialogueNode> {
+    public ddo: IDialogueDefinitionObject<IntentType, NevermindIntentType>
+    private apiInfo: {
+        baseNenaApi: string,
         apiKey: string
-    }) {
-    // code to make sure that the needed values exist
-    /// if !('intentions' in ddo)
-    /**
-     * Encodes the message using nena
-     * @param message Message to encode
-     * @returns Matched intent
-     */
-    const encodeMessage = async (message: string): Promise<IntentType> => {
-        const { baseNenaApi, apiKey } = apiInfo
-        const _encoding = await Encode<IntentType>(message, ddo.intentionTexts, baseNenaApi, apiKey)
+    } 
+
+    // @ts-ignore
+    private DialogueSequences: { [key in IntentType]: SequenceDialogueKey[] | null } = {}
+    private DialogueMap: { [x in SequenceDialogueKey]: DialogueObjectType<AllDialogueNode> } = {}
+
+    private responder: IResponseBuilder<IntentType, SequenceDialogueKey, AllDialogueNode>
+
+    constructor (
+        ddo: IDialogueDefinitionObject<IntentType, NevermindIntentType>, 
+        apiInfo: {
+            baseNenaApi: string, 
+            apiKey: string
+        }
+    ) {
+        this.ddo = ddo
+        this.apiInfo = apiInfo
+
+        // Building the ConverseAgent components
+
+        this.ddo.intentions.forEach(v => {
+            const dialogue = ddo.sequences[v as IntentType]
+
+            if(dialogue !== undefined && dialogue !== null) {            
+                const SEQUENCE_DIALOG_KEY: SequenceDialogueKey= `${v}-DIALOGUE`
+
+                if (!(v in this.DialogueSequences)) 
+                    this.DialogueSequences[v] = [SEQUENCE_DIALOG_KEY]
+
+                if (this.DialogueMap[SEQUENCE_DIALOG_KEY] === undefined) {
+                    this.DialogueMap[SEQUENCE_DIALOG_KEY] = DialogueObject(dialogue) as DialogueObjectType<AllDialogueNode>
+                }
+            }
+        })
+
+        this.responder = new Responder(this.ddo.responses, this.DialogueSequences, this.DialogueMap, apiInfo)
+    }
+
+    async encodeMessage (message: string) {
+        const { baseNenaApi, apiKey } = this.apiInfo
+        
+        const _encoding = await Encode<IntentType>(message, this.ddo.intentionTexts, baseNenaApi, apiKey)
 
         if (_encoding === null) {
-            throw new Error("Encode the data")
+            throw new Error(`Unable to encode for <message: ${message}>`)
         }
 
         return _encoding
     }
 
-    // Build the DialogSequences + DialogMap
-    // -------------------------------------
+    async respond (message: string, state: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode> = {}): Promise<StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode>> {
+        let _encoded = await this.encodeMessage(message)
 
-    type SequenceDialogueKey = string
+        const { prevSequenceDialogue: prevSequence = null, action, history } = state
 
-    // @ts-ignore
-    const DialogueSequences: { [key in IntentType]: Array<SequenceDialogueKey> } = {}
-    const DialogueMap: { [x in SequenceDialogueKey]: DialogueObjectType<unknown> } = {}
+        if (prevSequence !== null) {
+            // checks first if the intent is NEVER_MIND
+            if (_encoded === this.ddo.nevermindIntent) {
+                // Reset the context
+                return {
+                    message: this.responder.baseResponse(this.ddo.nevermindIntent, "Default text for Nevermind statement"),
+                    state: chatStateUpdater(state, { action: this.ddo.nevermindIntent }, true)
+                }
+            }
 
-    ddo.intentions.forEach(v => {
-        const dialogue = ddo.sequences[v as IntentType]
-
-        if(dialogue !== undefined && dialogue !== null) {            
-            const SEQUENCE_DIALOG_KEY: SequenceDialogueKey= `${v}-DIALOGUE`
-
-            if (!(v in DialogueSequences)) 
-                DialogueSequences[v] = [SEQUENCE_DIALOG_KEY]
-
-            if (DialogueMap[SEQUENCE_DIALOG_KEY] === undefined) {
-                DialogueMap[SEQUENCE_DIALOG_KEY] = DialogueObject(dialogue)
+            if (action !== undefined && action !== null) {
+                _encoded = action
             }
         }
-    })
 
-    // Build a responder
-    // -------------------------------------
+        const decodedResponse = await this.responder.buildResponse(_encoded, message, state)
+        const { text } = decodedResponse
 
-    const responder = Responder(ddo.responses, DialogueSequences, DialogueMap, apiInfo)
-    type StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode> = { message: string, state: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode> }
-
-    return ({
-        respond: async (message: string, state: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode> = {}): Promise<StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode>> => {
-            let _encoded = await encodeMessage(message)
-
-            const { prevSequenceDialogue: prevSequence = null, action, history } = state
-
-            if (prevSequence !== null) {
-                // checks first if the intent is NEVER_MIND
-                if (_encoded === ddo.nevermindIntent) {
-                    // Reset the context
-                    return {
-                        message: responder.baseResponse(ddo.nevermindIntent, "Default text for Nevermind statement"),
-                        state: chatStateUpdater(state, { action: ddo.nevermindIntent }, true)
-                    }
-                }
-
-                if (action !== undefined && action !== null) {
-                    _encoded = action
-                } else {
-                    console.log("there is previous sequence but no action?? how? defaulting to data")
-                }
-            } 
-
-            const decodedResponse = await responder.buildResponse(_encoded, message, state)
-            const { text } = decodedResponse
-            
-            return {
-                message: (text !== null ? text : responder.baseResponse(ddo.nevermindIntent, "Default text for Nevermind statement")),
-                state: chatStateUpdater(state, { 
-                    action: _encoded,
-                    currentDialogueNode: decodedResponse.sequenceDialogue(),
-                    nextDialogueNode: decodedResponse.nextSequenceDialogue()
-                })
-            }
+        const newState = chatStateUpdater(state, { 
+            action: _encoded,
+            currentDialogueNode: decodedResponse.sequenceDialogue(),
+            nextDialogueNode: decodedResponse.nextSequenceDialogue()
+        })
+        
+        if (text === null) {
+            return await this.respond(message, newState)
         }
-    })
+
+        return {
+            message: text,
+            state: newState
+        }
+    }
 }
 
 function chatStateUpdater <IntentType extends string, SequenceDialogueKey, AllDialogueNodes> (
