@@ -3,7 +3,7 @@
   "version": "0.1.2",
   "description": "Creating Conversational Agents (Nena Converse agents)",
   "main": "dist/index.js",
-  "types": "./typings",
+  "types": "./@types",
   "scripts": {
     "tsc": "npx tsc -p .",
     "build": "yarn run tsc",

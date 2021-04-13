@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { IntentionTexts } from '../../typings/core'
+import { IntentionTexts } from '../../@types/core'
 
 /**
  * Performs the intent classification to return the matched code

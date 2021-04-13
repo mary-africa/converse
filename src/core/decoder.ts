@@ -1,7 +1,7 @@
-import { ChatState, DialogueSequenceMarker } from "../../typings"
+import { ChatState, DialogueSequenceMarker } from "../../@types"
 import { DialogueSelector } from "./dialogue"
-import { DialogueCallback } from "../../typings/dialogue"
-import { DialogueObjectType, IDialogueNode } from '../../typings/core'
+import { DialogueCallback } from "../../@types/dialogue"
+import { DialogueObjectType, IDialogueNode } from '../../@types/core'
 
 /**
  * Checks if the intention has 

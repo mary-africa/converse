@@ -1,7 +1,7 @@
 import { WritableDraft } from 'immer/dist/internal'
-import { DialogueSequenceMarker } from '../typings'
+import { DialogueSequenceMarker } from '../@types'
 import { encode } from './core/encoder'
-import { InputOptions } from '../typings/dialogue'
+import { InputOptions } from '../@types/dialogue'
 
 const levenshtein = require('js-levenshtein');
 

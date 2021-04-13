@@ -1,6 +1,6 @@
-import { ChatState, DialogueSequenceMarker } from '../typings'
-import { IDialogueDefinitionObject } from '../typings/ddo'
-import { DialogueObjectType } from '../typings/core'
+import { ChatState, DialogueSequenceMarker, IConverseAgent } from '../@types'
+import { IDialogueDefinitionObject } from '../@types/ddo'
+import { DialogueObjectType } from '../@types/core'
 
 import { DialogueObject } from './core'
 import { encode as Encode } from './core/encoder'
@@ -14,14 +14,10 @@ export * from './utils'
 type SequenceDialogueKey = string
 type StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode> = { message: string, state: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode> }
 
-interface IConverseAgent<IT extends string, NmIT extends IT, DN> {
-    ddo: IDialogueDefinitionObject<IT, NmIT>
-    encodeMessage: (message: string) => Promise<IT>
-    respond: (message: string, state: ChatState<IT, SequenceDialogueKey, DN>) => Promise<StatefulMessage<IT, SequenceDialogueKey, DN>>
-}
-
 export default class ConverseAgent <IntentType extends string, NevermindIntentType extends IntentType, AllDialogueNode> implements IConverseAgent<IntentType, NevermindIntentType, AllDialogueNode> {
     public ddo: IDialogueDefinitionObject<IntentType, NevermindIntentType>
+    public responder: IResponseBuilder<IntentType, SequenceDialogueKey, AllDialogueNode>
+
     private apiInfo: {
         baseNenaApi: string,
         apiKey: string
@@ -31,7 +27,6 @@ export default class ConverseAgent <IntentType extends string, NevermindIntentTy
     private DialogueSequences: { [key in IntentType]: SequenceDialogueKey[] | null } = {}
     private DialogueMap: { [x in SequenceDialogueKey]: DialogueObjectType<AllDialogueNode> } = {}
 
-    private responder: IResponseBuilder<IntentType, SequenceDialogueKey, AllDialogueNode>
 
     constructor (
         ddo: IDialogueDefinitionObject<IntentType, NevermindIntentType>, 
