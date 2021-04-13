@@ -1,7 +1,8 @@
-import { Dialogue } from "./dialogue"
+import { Dialogue, DialogueItem } from "./dialogue"
 
 export interface IDialogueNode<DNodeType> {
     key: DNodeType,
+    self: DialogueItem<DNodeType>,
     getText: () => string,
     next: () => DNodeType | string | null
     execute: DialogueCallback,

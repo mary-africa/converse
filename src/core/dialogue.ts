@@ -21,7 +21,7 @@ export const InitDialogueNode = (baseNenaApi: string, apiKey: string) => <DNode>
 const BaseDialogueNode = <DNode> (key: DNode, item: DialogueItem<DNode>, baseNenaApi: string, apiKey: string): IDialogueNode<DNode> => {
     const getText = (): string => item.q.toString().trim()
     const execute: DialogueCallback = item.callback !== undefined ? item.callback : async () => { console.log("Nothing to execute here")}
-    
+
     // tries to match the input according to the rule set by the user
     const matchInput = async (input: string): Promise<{[x: string]: string}> => {
         // checking the options
@@ -110,6 +110,7 @@ const BaseDialogueNode = <DNode> (key: DNode, item: DialogueItem<DNode>, baseNen
 
     return ({
         key,
+        self: item,
         getText,
         execute,
         matchInput,
