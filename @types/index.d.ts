@@ -1,3 +1,4 @@
+import { IDialogueSelector } from "./core"
 
 type Message = string
 interface ResponseMessage {
@@ -59,7 +60,9 @@ export type StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode> = 
 export interface ConverseAgent<IT extends string, NmIT extends IT, DN> {
     ddo: IDialogueDefinitionObject<IT, NmIT>
     responder: Responder<IT, SequenceDialogueKey, DN>
+    
     encodeMessage: (message: string) => Promise<IT>
+    selector: (intentWithSequence: IntentType) => IDialogueSelector<DN>
     respond: (message: string, state: ChatState<IT, SequenceDialogueKey, DN>) => Promise<StatefulMessage<IT, SequenceDialogueKey, DN>>
 }
 
@@ -70,6 +73,7 @@ type Response<DN> = {
 }
 
 export interface Responder<IntentType, ActionSequenceDialogueKey, AllDNodeType> {
+    selector: (intentWithSequence: IntentType) => IDialogueSelector<AllDNodeType>
     baseResponse: (encoding: IntentType | string, defaultString: string) => string
     buildResponse: (encoding: IntentType, message: string, state: ChatState<IntentType, ActionSequenceDialogueKey, AllDNodeType>) => Promise<Response<AllDNodeType>>
 }

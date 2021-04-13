@@ -106,6 +106,19 @@ export class Responder<IntentType extends string, ActionSequenceDialogueKey exte
         nextSequenceDialogue: () => null
     })
 
+    selector = (intentWithSequence: IntentType) => {
+        const { baseNenaApi, apiKey } = this.apiInfo
+
+        return DialogueSelector(
+            // @ts-ignore
+            intentWithSequence,
+            this.dialogMap, 
+            {
+                baseNenaApi, apiKey
+            }
+        )
+    }
+
     baseResponse = (intent: IntentType | string, defaultString = "Default text") => {
         return this.intentResponseMap[intent as IntentType] || defaultString
     }
