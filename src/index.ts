@@ -14,6 +14,7 @@ export * from './utils'
 class ConverseAgent <IntentType extends string, NevermindIntentType extends IntentType, AllDialogueNode> implements IConverseAgent<IntentType, NevermindIntentType, AllDialogueNode> {
     public ddo: IDialogueDefinitionObject<IntentType, NevermindIntentType>
     public responder: IResponseBuilder<IntentType, SequenceDialogueKey, AllDialogueNode>
+    private nodeAction: (intentDotNode: string) => Promise<void>
 
     private apiInfo: {
         baseNenaApi: string,
@@ -27,6 +28,7 @@ class ConverseAgent <IntentType extends string, NevermindIntentType extends Inte
 
     constructor (
         ddo: IDialogueDefinitionObject<IntentType, NevermindIntentType>, 
+        nodeAction: (intentDotNode: string) => Promise<void>,
         apiInfo: {
             baseNenaApi: string, 
             apiKey: string
@@ -34,7 +36,7 @@ class ConverseAgent <IntentType extends string, NevermindIntentType extends Inte
     ) {
         this.ddo = ddo
         this.apiInfo = apiInfo
-
+        this.nodeAction = nodeAction
         // Building the ConverseAgent components
 
         this.ddo.intentions.forEach(v => {
@@ -52,7 +54,7 @@ class ConverseAgent <IntentType extends string, NevermindIntentType extends Inte
             }
         })
 
-        this.responder = new Responder(this.ddo.responses, this.DialogueSequences, this.DialogueMap, apiInfo)
+        this.responder = new Responder(this.ddo.responses, this.DialogueSequences, this.DialogueMap, this.nodeAction, apiInfo)
     }
 
     selector = (intentWithSequence: IntentType) => this.responder.selector(intentWithSequence)
@@ -69,11 +71,7 @@ class ConverseAgent <IntentType extends string, NevermindIntentType extends Inte
         return _encoding
     }
 
-    async respond (
-        input: { message: string, state?: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode>}, 
-        nodeAction: (intentDotNode: string) => Promise<void>
-    ): Promise<StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode>> {
-        const { message, state = {} } = input
+    async respond (message: string, state: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode> = {}): Promise<StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode>> {
         let _encoded = await this.encodeMessage(message)
 
         const { prevSequenceDialogue: prevSequence = null, action, history } = state
@@ -103,7 +101,7 @@ class ConverseAgent <IntentType extends string, NevermindIntentType extends Inte
         })
         
         if (text === null) {
-            return await this.respond({ message, state: newState }, nodeAction)
+            return await this.respond(message, newState)
         }
 
         return {
