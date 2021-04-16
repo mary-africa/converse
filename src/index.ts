@@ -69,7 +69,11 @@ class ConverseAgent <IntentType extends string, NevermindIntentType extends Inte
         return _encoding
     }
 
-    async respond (message: string, state: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode> = {}): Promise<StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode>> {
+    async respond (
+        input: { message: string, state?: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode>}, 
+        nodeAction: (intentDotNode: string) => Promise<void>
+    ): Promise<StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode>> {
+        const { message, state = {} } = input
         let _encoded = await this.encodeMessage(message)
 
         const { prevSequenceDialogue: prevSequence = null, action, history } = state
@@ -99,7 +103,7 @@ class ConverseAgent <IntentType extends string, NevermindIntentType extends Inte
         })
         
         if (text === null) {
-            return await this.respond(message, newState)
+            return await this.respond({ message, state: newState }, nodeAction)
         }
 
         return {
