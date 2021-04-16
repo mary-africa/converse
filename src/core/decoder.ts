@@ -87,13 +87,13 @@ export class Responder<IntentType extends string, ActionSequenceDialogueKey exte
     private dialogSequences: { [x in IntentType]: ActionSequenceDialogueKey[] | null };
     private dialogMap: { [x in ActionSequenceDialogueKey]: DialogueObjectType<AllDNodeType> };
     private apiInfo: { apiKey: string, baseNenaApi: string };
-    private nodeAction: (intentDotNode: string) => Promise<void>
+    private nodeAction: <T> (intentDotNode: string, reducerArgs?: T) => Promise<void>
 
     constructor (
         intentResponseMap: { [x in IntentType]: string }, 
         dialogSequences: { [x in IntentType]: ActionSequenceDialogueKey[] | null },
         dialogMap: { [x in ActionSequenceDialogueKey]: DialogueObjectType<AllDNodeType> },
-        nodeAction: (intentDotNode: string) => Promise<void>,
+        nodeAction: <T> (intentDotNode: string, reducerArgs?: T) => Promise<void>,
         apiInfo: { apiKey: string, baseNenaApi: string }
     ) {
         this.apiInfo = apiInfo
@@ -126,7 +126,9 @@ export class Responder<IntentType extends string, ActionSequenceDialogueKey exte
         return this.intentResponseMap[intent as IntentType] || defaultString
     }
 
-    buildResponse = async (encoding: IntentType, message: string, state: ChatState<IntentType, ActionSequenceDialogueKey, AllDNodeType>) => {
+    buildResponse = async <T> (encoding: IntentType, input: { message: string, state: ChatState<IntentType, ActionSequenceDialogueKey, AllDNodeType>}, reducerArgs?: T) => {
+        const { message, state } = input
+        
         /**
          * Information
          * needed to parse 
@@ -187,7 +189,7 @@ export class Responder<IntentType extends string, ActionSequenceDialogueKey exte
             const dialogueOutput = await dialogueNode.matchInput(message)
 
             // execute the action
-            this.nodeAction(`${encoded}.${dialogueOutput}`)
+            this.nodeAction(`${encoded}.${dialogueOutput}`, reducerArgs)
 
             // execute function if execution is successful
             await dialogueNode.execute(message)
