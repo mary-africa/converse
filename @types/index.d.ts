@@ -63,9 +63,7 @@ export interface ConverseAgent<IT extends string, NmIT extends IT, DN> {
     
     encodeMessage: (message: string) => Promise<IT>
     selector: (intentWithSequence: IntentType) => IDialogueSelector<DN>
-    respond: (
-        input: { message: string, state?: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode>}, 
-        nodeAction: (intentDotNode: string) => Promise<void>
+    respond: ( message: string, state?: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode> 
     ) => Promise<StatefulMessage<IT, SequenceDialogueKey, DN>>
 }
 
