@@ -8,7 +8,7 @@ import { IDialogueNode, DialogueObjectType, IDialogueSelector } from '../../@typ
  * Build the dialogue object from definition to construct certain things
  * @param dialogueDefinition definition object with the information
  */
-export const DialogueObject = <DNode> (dialogueDefinition: IDialogueDefinition<DNode>): DialogueObjectType<DNode> => {
+export const DialogueObject = <DNode, ActionType extends string> (dialogueDefinition: IDialogueDefinition<DNode, ActionType>): DialogueObjectType<DNode, ActionType> => {
     // get the concerned dialog
     return dialogueDefinition
 }
@@ -17,10 +17,9 @@ export const DialogueObject = <DNode> (dialogueDefinition: IDialogueDefinition<D
  * 
  */
 
-export const InitDialogueNode = (baseNenaApi: string, apiKey: string) => <DNode> (key: DNode, item: DialogueItem<DNode>) => BaseDialogueNode(key, item, baseNenaApi, apiKey)
-const BaseDialogueNode = <DNode> (key: DNode, item: DialogueItem<DNode>, baseNenaApi: string, apiKey: string): IDialogueNode<DNode> => {
+export const InitDialogueNode = (baseNenaApi: string, apiKey: string) => <DNode, ActionType extends string> (key: DNode, item: DialogueItem<DNode, ActionType>) => BaseDialogueNode(key, item, baseNenaApi, apiKey)
+const BaseDialogueNode = <DNode, ActionType extends string> (key: DNode, item: DialogueItem<DNode, ActionType>, baseNenaApi: string, apiKey: string): IDialogueNode<DNode, ActionType> => {
     const getText = (): string => item.q.toString().trim()
-    const execute: DialogueCallback = item.callback !== undefined ? item.callback : async () => { console.log("Nothing to execute here")}
 
     // tries to match the input according to the rule set by the user
     const matchInput = async (input: string): Promise<{[x: string]: string}> => {
@@ -111,24 +110,24 @@ const BaseDialogueNode = <DNode> (key: DNode, item: DialogueItem<DNode>, baseNen
     return ({
         key,
         self: item,
+        actionType: item.action !== undefined ? item.action : null,
         getText,
-        execute,
         matchInput,
         nextStaticNodeKey,
         next: () => item.next !== undefined ? item.next : null
     })
 } 
 
-export function DialogueSelector <DNodeType, DialogueKey extends string>(
+export function DialogueSelector <DNodeType, DialogueKey extends string, ActionType extends string>(
     sequences: Array<DialogueKey>, 
     DialogueMap: { 
-        [dialogueKey in DialogueKey]: DialogueObjectType<DNodeType>
+        [dialogueKey in DialogueKey]: DialogueObjectType<DNodeType, ActionType>
     },
     credentials: { baseNenaApi: string, apiKey: string }
 ): IDialogueSelector<DNodeType> {
     const DialogueNode = InitDialogueNode(credentials.baseNenaApi, credentials.apiKey)
 
-    const selectDialogue = (markerIndex: number): DialogueObjectType<DNodeType> | null => {
+    const selectDialogue = (markerIndex: number): DialogueObjectType<DNodeType, ActionType> | null => {
         if (markerIndex <= sequences.length - 1) {
             return DialogueMap[sequences[markerIndex]]
         }
@@ -141,7 +140,7 @@ export function DialogueSelector <DNodeType, DialogueKey extends string>(
      * Selects a dialogue in the sequence
      * @param marker object that identifies the dialogue in the sequence
      */
-    const selectNode = (marker: DialogueSequenceMarker<DNodeType>): IDialogueNode<DNodeType> | null => {
+    const selectNode = (marker: DialogueSequenceMarker<DNodeType>): IDialogueNode<DNodeType, ActionType> | null => {
         const { index, node } =  marker
 
         console.log("Selected Marker:", marker)
@@ -195,6 +194,5 @@ export function DialogueSelector <DNodeType, DialogueKey extends string>(
     return ({
         selectNode,
         nextNodeMarker,
-        // nextNode
     })
 }

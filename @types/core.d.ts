@@ -1,16 +1,16 @@
 import { Dialogue, DialogueItem } from "./dialogue"
 
-export interface IDialogueNode<DNodeType> {
+export interface IDialogueNode<DNodeType, ActionType extends string> {
     key: DNodeType,
-    self: DialogueItem<DNodeType>,
+    self: DialogueItem<DNodeType, ActionType>,
+    actionType: ActionType | null,
     getText: () => string,
     next: () => DNodeType | string | null
-    execute: DialogueCallback,
     matchInput: (input: string) => Promise<{[x: string]: string}>
     nextStaticNodeKey: (valObj: {[valKey in string]: InputOption}) => DNodeType | null
 }
 
-export type DialogueObjectType<DNode> = Dialogue<DNode>
+export type DialogueObjectType<DNode, ActionType extends string> = Dialogue<DNode, ActionType>
 
 interface IDialogueSelector<DNodeType>  {
     selectNode: (marker: DialogueSequenceMarker<DNodeType>) => IDialogueNode<DNodeType> | null

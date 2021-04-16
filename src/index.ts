@@ -11,10 +11,10 @@ import { Draft } from 'immer/dist/internal'
   
 export * from './utils'
 
-class ConverseAgent <IntentType extends string, NevermindIntentType extends IntentType, AllDialogueNode> implements IConverseAgent<IntentType, NevermindIntentType, AllDialogueNode> {
+class ConverseAgent <IntentType extends string, NevermindIntentType extends IntentType, AllDialogueNode, ActionType extends string> implements IConverseAgent<IntentType, NevermindIntentType, AllDialogueNode, ActionType> {
     public ddo: IDialogueDefinitionObject<IntentType, NevermindIntentType>
-    public responder: IResponseBuilder<IntentType, SequenceDialogueKey, AllDialogueNode>
-    private nodeAction: <T> (intentDotNode: string, reducerArgs?: T) => Promise<void>
+    public responder: IResponseBuilder<IntentType, SequenceDialogueKey, AllDialogueNode, ActionType>
+    private nodeAction: <T> (actionType: ActionType, actionData?: T) => Promise<void>
 
     private apiInfo: {
         baseNenaApi: string,
@@ -23,12 +23,12 @@ class ConverseAgent <IntentType extends string, NevermindIntentType extends Inte
 
     // @ts-ignore
     private DialogueSequences: { [key in IntentType]: SequenceDialogueKey[] | null } = {}
-    private DialogueMap: { [x in SequenceDialogueKey]: DialogueObjectType<AllDialogueNode> } = {}
+    private DialogueMap: { [x in SequenceDialogueKey]: DialogueObjectType<AllDialogueNode, ActionType> } = {}
 
 
     constructor (
         ddo: IDialogueDefinitionObject<IntentType, NevermindIntentType>, 
-        nodeAction: <T> (intentDotNode: string, reducerArgs?: T) => Promise<void>,
+        nodeAction: <T> (actionType: ActionType, actionData?: T) => Promise<void>,
         apiInfo: {
             baseNenaApi: string, 
             apiKey: string
@@ -49,7 +49,7 @@ class ConverseAgent <IntentType extends string, NevermindIntentType extends Inte
                     this.DialogueSequences[v] = [SEQUENCE_DIALOG_KEY]
 
                 if (this.DialogueMap[SEQUENCE_DIALOG_KEY] === undefined) {
-                    this.DialogueMap[SEQUENCE_DIALOG_KEY] = DialogueObject(dialogue) as DialogueObjectType<AllDialogueNode>
+                    this.DialogueMap[SEQUENCE_DIALOG_KEY] = DialogueObject(dialogue) as DialogueObjectType<AllDialogueNode, ActionType>
                 }
             }
         })
@@ -71,12 +71,15 @@ class ConverseAgent <IntentType extends string, NevermindIntentType extends Inte
         return _encoding
     }
 
-    async respond (
+    async respond <T> (
         input: {
             message: string, 
             state?: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode>
         }, 
-        reducerArgs?: any
+        actionPayload?: {
+            type: ActionType,
+            data?: T
+        }
     ): Promise<StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode>> {
         const { message, state = {} } = input
         let _encoded = await this.encodeMessage(message)
@@ -98,7 +101,7 @@ class ConverseAgent <IntentType extends string, NevermindIntentType extends Inte
             }
         }
 
-        const decodedResponse = await this.responder.buildResponse(_encoded, { message, state }, reducerArgs)
+        const decodedResponse = await this.responder.buildResponse(_encoded, { message, state }, actionPayload)
         const { text } = decodedResponse
 
         const newState = chatStateUpdater(state, { 
@@ -108,7 +111,7 @@ class ConverseAgent <IntentType extends string, NevermindIntentType extends Inte
         })
         
         if (text === null) {
-            return await this.respond({ message, state: newState }, reducerArgs)
+            return await this.respond({ message, state: newState }, actionPayload)
         }
 
         return {

@@ -4,11 +4,11 @@ export type DialogueCallback = (input: DialogueNodeInput) => Promise<void>
 /**
  * The main dialogue object interface.
  */
-export interface Dialogue<DialogueNodeOption> {
+export interface Dialogue<DialogueNodeOption, ActionType extends string> {
     start: DialogueNodeOption
 
     nodes: {
-        [node in DialogueNodeOption]: DialogueItem<DialogueNodeOption>
+        [node in DialogueNodeOption]: DialogueItem<DialogueNodeOption, ActionType>
     }
 }
 
@@ -18,7 +18,7 @@ type InputOptions = Array<InputOption>
 /**
  * Information about the dialog node.
  */
-export interface DialogueItem<NodeOption> {
+export interface DialogueItem<NodeOption, ActionType extends string> {
     /**
      * The text to show as text
      */
@@ -92,9 +92,9 @@ export interface DialogueItem<NodeOption> {
     }
 
     /**
-     * Handler to work with the input
+     * actionType to point to the action to be executed
      */
-    callback?: DialogueCallback
+    action?: ActionType
 
     /**
      * Nature: Static / Dynamic

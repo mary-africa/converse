@@ -82,18 +82,18 @@ interface Response<SNodeType>{
  * Build an object that can be used to 
  * create responses for particular conversation flow
  */
-export class Responder<IntentType extends string, ActionSequenceDialogueKey extends string, AllDNodeType> implements IResponder<IntentType, ActionSequenceDialogueKey, AllDNodeType> {
+export class Responder<IntentType extends string, ActionSequenceDialogueKey extends string, AllDNodeType, ActionType extends string> implements IResponder<IntentType, ActionSequenceDialogueKey, AllDNodeType, ActionType> {
     private intentResponseMap: { [x in IntentType]: string };
     private dialogSequences: { [x in IntentType]: ActionSequenceDialogueKey[] | null };
-    private dialogMap: { [x in ActionSequenceDialogueKey]: DialogueObjectType<AllDNodeType> };
+    private dialogMap: { [x in ActionSequenceDialogueKey]: DialogueObjectType<AllDNodeType, ActionType> };
     private apiInfo: { apiKey: string, baseNenaApi: string };
-    private nodeAction: <T> (intentDotNode: string, reducerArgs?: T) => Promise<void>
+    private nodeAction: <T> (actionType: ActionType, actionData?: T) => Promise<void>
 
     constructor (
         intentResponseMap: { [x in IntentType]: string }, 
         dialogSequences: { [x in IntentType]: ActionSequenceDialogueKey[] | null },
-        dialogMap: { [x in ActionSequenceDialogueKey]: DialogueObjectType<AllDNodeType> },
-        nodeAction: <T> (intentDotNode: string, reducerArgs?: T) => Promise<void>,
+        dialogMap: { [x in ActionSequenceDialogueKey]: DialogueObjectType<AllDNodeType, ActionType> },
+        nodeAction: <T> (actionType: ActionType, actionData?: T) => Promise<void>,
         apiInfo: { apiKey: string, baseNenaApi: string }
     ) {
         this.apiInfo = apiInfo
@@ -126,7 +126,14 @@ export class Responder<IntentType extends string, ActionSequenceDialogueKey exte
         return this.intentResponseMap[intent as IntentType] || defaultString
     }
 
-    buildResponse = async <T> (encoding: IntentType, input: { message: string, state: ChatState<IntentType, ActionSequenceDialogueKey, AllDNodeType>}, reducerArgs?: T) => {
+    buildResponse = async <T> (
+        encoding: IntentType, 
+        input: { message: string, state: ChatState<IntentType, ActionSequenceDialogueKey, AllDNodeType>}, 
+        actionPayload?: {
+            type: ActionType,
+            data?: T
+        }
+    ) => {
         const { message, state } = input
         
         /**
@@ -183,16 +190,19 @@ export class Responder<IntentType extends string, ActionSequenceDialogueKey exte
             marker = nextMarker as DialogueSequenceMarker<AllDNodeType>
         } else {
             // execute the function of the previous node
-            const dialogueNode = selector.selectNode(marker) as IDialogueNode<AllDNodeType>
+            const dialogueNode = selector.selectNode(marker) as IDialogueNode<AllDNodeType, ActionType>
 
             // match the user typed input to get output object
             const dialogueOutput = await dialogueNode.matchInput(message)
 
             // execute the action
-            this.nodeAction(`${encoded}.${dialogueOutput}`, reducerArgs)
-
-            // execute function if execution is successful
-            await dialogueNode.execute(message)
+            if (actionPayload !== undefined) {
+                const { data, type } = actionPayload
+                if(dialogueNode.actionType === type){
+                    // this is an async function
+                    this.nodeAction(type, data)
+                }
+            }
 
             // gets the static key for the next node
             const nextNode: AllDNodeType | null = dialogueNode.nextStaticNodeKey(dialogueOutput)
@@ -210,7 +220,7 @@ export class Responder<IntentType extends string, ActionSequenceDialogueKey exte
 
         
         const dialogueNode = marker !== null ? 
-              selector.selectNode(marker) as IDialogueNode<AllDNodeType>
+              selector.selectNode(marker) as IDialogueNode<AllDNodeType, ActionType>
             : undefined
         
         // This is where you have reached

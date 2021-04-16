@@ -57,18 +57,21 @@ export interface HookedStatefulChatService<ChatState> extends BaseHookedChatServ
 export type SequenceDialogueKey = string
 export type StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode> = { message: string, state: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode> }
 
-export interface ConverseAgent<IT extends string, NmIT extends IT, DN> {
+export interface ConverseAgent<IT extends string, NmIT extends IT, DN, ActionType extends string> {
     ddo: IDialogueDefinitionObject<IT, NmIT>
-    responder: Responder<IT, SequenceDialogueKey, DN>
+    responder: Responder<IT, SequenceDialogueKey, DN, ActionType>
     
     encodeMessage: (message: string) => Promise<IT>
     selector: (intentWithSequence: IntentType) => IDialogueSelector<DN>
-    respond: ( 
+    respond: <T> ( 
         input: {
             message: string, 
             state?: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode>
-        }, 
-        reducerArgs?: any
+        },
+        actionPayload?: {
+            type: ActionType,
+            data?: T
+        }
     ) => Promise<StatefulMessage<IT, SequenceDialogueKey, DN>>
 }
 
@@ -78,9 +81,16 @@ type Response<DN> = {
     nextSequenceDialogue: () => (DialogueSequenceMarker<DN> | null)
 }
 
-export interface Responder<IntentType, ActionSequenceDialogueKey, AllDNodeType> {
+export interface Responder<IntentType, ActionSequenceDialogueKey, AllDNodeType, ActionType extends string> {
     selector: (intentWithSequence: IntentType) => IDialogueSelector<AllDNodeType>
     baseResponse: (encoding: IntentType | string, defaultString: string) => string
-    buildResponse: (encoding: IntentType, input: { message: string, state: ChatState<IntentType, ActionSequenceDialogueKey, AllDNodeType>}, reducerArgs?: T) => Promise<Response<AllDNodeType>>
+    buildResponse: <T> (
+        encoding: IntentType, 
+        input: { message: string, state: ChatState<IntentType, ActionSequenceDialogueKey, AllDNodeType>}, 
+        actionPayload?: {
+            type: ActionType,
+            data?: T
+        }
+    ) => Promise<Response<AllDNodeType>>
 }
 
