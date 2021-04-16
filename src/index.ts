@@ -77,8 +77,7 @@ class ConverseAgent <IntentType extends string, NevermindIntentType extends Inte
             state?: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode>
         }, 
         actionPayload?: {
-            type: ActionType,
-            data?: T
+            [type in ActionType]: T | undefined
         }
     ): Promise<StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode>> {
         const { message, state = {} } = input

@@ -69,8 +69,7 @@ export interface ConverseAgent<IT extends string, NmIT extends IT, DN, ActionTyp
             state?: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode>
         },
         actionPayload?: {
-            type: ActionType,
-            data?: T
+            [type in ActionType]: T | undefined
         }
     ) => Promise<StatefulMessage<IT, SequenceDialogueKey, DN>>
 }
@@ -88,8 +87,7 @@ export interface Responder<IntentType, ActionSequenceDialogueKey, AllDNodeType, 
         encoding: IntentType, 
         input: { message: string, state: ChatState<IntentType, ActionSequenceDialogueKey, AllDNodeType>}, 
         actionPayload?: {
-            type: ActionType,
-            data?: T
+            [type in ActionType]: T | undefined
         }
     ) => Promise<Response<AllDNodeType>>
 }

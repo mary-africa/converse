@@ -130,8 +130,7 @@ export class Responder<IntentType extends string, ActionSequenceDialogueKey exte
         encoding: IntentType, 
         input: { message: string, state: ChatState<IntentType, ActionSequenceDialogueKey, AllDNodeType>}, 
         actionPayload?: {
-            type: ActionType,
-            data?: T
+            [type in ActionType]: T | undefined
         }
     ) => {
         const { message, state } = input
@@ -197,10 +196,11 @@ export class Responder<IntentType extends string, ActionSequenceDialogueKey exte
 
             // execute the action
             if (actionPayload !== undefined) {
-                const { data, type } = actionPayload
-                if(dialogueNode.actionType === type){
+                const { actionType } = dialogueNode
+
+                if (actionType !== null) {
                     // this is an async function
-                    this.nodeAction(type, data)
+                    this.nodeAction(actionType, actionPayload[actionType])
                 }
             }
 
