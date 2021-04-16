@@ -66,7 +66,7 @@ export interface ConverseAgent<IT extends string, NmIT extends IT, DN> {
     respond: ( 
         input: {
             message: string, 
-            state: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode>
+            state?: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode>
         }, 
         reducerArgs?: any
     ) => Promise<StatefulMessage<IT, SequenceDialogueKey, DN>>

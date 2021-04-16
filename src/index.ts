@@ -74,7 +74,7 @@ class ConverseAgent <IntentType extends string, NevermindIntentType extends Inte
     async respond (
         input: {
             message: string, 
-            state: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode>
+            state?: ChatState<IntentType, SequenceDialogueKey, AllDialogueNode>
         }, 
         reducerArgs?: any
     ): Promise<StatefulMessage<IntentType, SequenceDialogueKey, AllDialogueNode>> {
@@ -98,7 +98,7 @@ class ConverseAgent <IntentType extends string, NevermindIntentType extends Inte
             }
         }
 
-        const decodedResponse = await this.responder.buildResponse(_encoded, message, state)
+        const decodedResponse = await this.responder.buildResponse(_encoded, { message, state }, reducerArgs)
         const { text } = decodedResponse
 
         const newState = chatStateUpdater(state, { 
@@ -108,7 +108,7 @@ class ConverseAgent <IntentType extends string, NevermindIntentType extends Inte
         })
         
         if (text === null) {
-            return await this.respond(message, newState)
+            return await this.respond({ message, state: newState }, reducerArgs)
         }
 
         return {
