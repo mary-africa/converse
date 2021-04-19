@@ -57,7 +57,7 @@ class ConverseAgent <IntentType extends string, NevermindIntentType extends Inte
         this.responder = new Responder(this.ddo.responses, this.DialogueSequences, this.DialogueMap, this.nodeAction, apiInfo)
     }
 
-    selector = (intentWithSequence: IntentType) => this.responder.selector(intentWithSequence)
+    getSelector = (intentWithSequence: IntentType) => this.responder.getSelector(intentWithSequence)
 
     async encodeMessage (message: string) {
         const { baseNenaApi, apiKey } = this.apiInfo

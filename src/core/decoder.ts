@@ -109,12 +109,18 @@ export class Responder<IntentType extends string, ActionSequenceDialogueKey exte
         nextSequenceDialogue: () => null
     })
 
-    selector = (intentWithSequence: IntentType) => {
+    getSelector = (intentWithSequence: IntentType) => {
         const { baseNenaApi, apiKey } = this.apiInfo
 
+        const selectedSequence = this.dialogSequences[intentWithSequence]
+
+        if (selectedSequence === null) {
+            console.log({ code: "null_sequence", message: `Intent '${intentWithSequence}' doesn't have a dialogue sequence`})
+            return null
+        }
+
         return DialogueSelector(
-            // @ts-ignore
-            intentWithSequence,
+            selectedSequence as ActionSequenceDialogueKey[],
             this.dialogMap, 
             {
                 baseNenaApi, apiKey
@@ -156,23 +162,13 @@ export class Responder<IntentType extends string, ActionSequenceDialogueKey exte
             return this.createDefaultResponse(encoded)
         }
 
-        // Select the dialogueSequence
-        const selectedSequence = this.dialogSequences[encoded]
+        // create dialogue selector
+        const selector = this.getSelector(encoded)
 
         // checks if the sequence has value
-        if (selectedSequence === null) {
+        if (selector === null) {
             return this.createDefaultResponse(encoded)
         }
-
-        const {baseNenaApi, apiKey} = this.apiInfo
-
-        // create dialogue selector
-        const selector = DialogueSelector(
-            //@ts-ignore
-            selectedSequence,
-            this.dialogMap, {
-                baseNenaApi, apiKey
-            })
 
         // default markers
         let marker: DialogueSequenceMarker<AllDNodeType> | null = prevSequenceDialogue
