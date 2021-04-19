@@ -62,7 +62,7 @@ export interface ConverseAgent<IT extends string, NmIT extends IT, DN, ActionTyp
     responder: Responder<IT, SequenceDialogueKey, DN, ActionType>
     
     encodeMessage: (message: string) => Promise<IT>
-    getSelector: (intentWithSequence: IntentType) => null | IDialogueSelector<DN>
+    getSelector: (intentWithSequence: IntentType) => null | IDialogueSelector<DN, ActionType>
     respond: <T> ( 
         input: {
             message: string, 
@@ -81,7 +81,7 @@ type Response<DN> = {
 }
 
 export interface Responder<IntentType, ActionSequenceDialogueKey, AllDNodeType, ActionType extends string> {
-    getSelector: (intentWithSequence: IntentType) => null | IDialogueSelector<AllDNodeType>
+    getSelector: (intentWithSequence: IntentType) => null | IDialogueSelector<AllDNodeType, ActionType>
     baseResponse: (encoding: IntentType | string, defaultString: string) => string
     buildResponse: <T> (
         encoding: IntentType, 

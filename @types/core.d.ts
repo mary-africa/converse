@@ -1,5 +1,6 @@
 import { Dialogue, DialogueItem } from "./dialogue"
 
+
 export interface IDialogueNode<DNodeType, ActionType extends string> {
     key: DNodeType,
     self: DialogueItem<DNodeType, ActionType>,
@@ -12,8 +13,8 @@ export interface IDialogueNode<DNodeType, ActionType extends string> {
 
 export type DialogueObjectType<DNode, ActionType extends string> = Dialogue<DNode, ActionType>
 
-interface IDialogueSelector<DNodeType>  {
-    selectNode: (marker: DialogueSequenceMarker<DNodeType>) => IDialogueNode<DNodeType> | null
+interface IDialogueSelector<DNodeType, ActionType extends string>  {
+    selectNode: (marker: DialogueSequenceMarker<DNodeType>) => IDialogueNode<DNodeType, ActionType> | null
     nextNodeMarker: (currentMarker: DialogueSequenceMarker<DNodeType>) => DialogueSequenceMarker<DNodeType | string> | null
 }
 

@@ -124,7 +124,7 @@ export function DialogueSelector <DNodeType, DialogueKey extends string, ActionT
         [dialogueKey in DialogueKey]: DialogueObjectType<DNodeType, ActionType>
     },
     credentials: { baseNenaApi: string, apiKey: string }
-): IDialogueSelector<DNodeType> {
+): IDialogueSelector<DNodeType, ActionType> {
     const DialogueNode = InitDialogueNode(credentials.baseNenaApi, credentials.apiKey)
 
     const selectDialogue = (markerIndex: number): DialogueObjectType<DNodeType, ActionType> | null => {
