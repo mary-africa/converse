@@ -1,0 +1,8 @@
+sample/
+tests/
+.github
+node_modules/
+packages/
+
+.gitignore
+*.lock
