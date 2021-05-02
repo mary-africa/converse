@@ -1,0 +1,13 @@
+{
+  "name": "@converse/www",
+  "version": "0.1.0",
+  "description": "These are `www` interfaces for the using the converse package.",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Kevin James",
+  "license": "UNLICENSED",
+  "homepage": "https://github.com/mary-africa/converse/packages/www#readme"
+}
