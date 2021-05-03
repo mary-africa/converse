@@ -1,8 +1,8 @@
-import { Dialogue as IDialogueDefinition, DialogueCallback, DialogueItem, InputOption } from '../../@types/dialogue'
+import { Dialogue as IDialogueDefinition, DialogueCallback, DialogueItem, InputOption } from '../../../@types/old/dialogue'
 import { nlpMatchRule as ApiNlpMatchRule, levenshteinMatchRule } from '../utils'
 
-import { DialogueSequenceMarker } from '../../@types'
-import { IDialogueNode, DialogueObjectType, IDialogueSelector } from '../../@types/core'
+import { DialogueSequenceMarker } from '../../../@types/old'
+import { IDialogueNode, DialogueObjectType, IDialogueSelector } from '../../../@types/old/core'
 
 /**
  * Build the dialogue object from definition to construct certain things

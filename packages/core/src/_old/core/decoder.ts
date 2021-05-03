@@ -1,4 +1,4 @@
-import { ChatState, DialogueSequenceMarker, Responder as IResponder } from "../../@types"
+import { ChatState, DialogueSequenceMarker, Responder as IResponder } from "../../@types/new"
 import { DialogueSelector } from "./dialogue"
 import { DialogueObjectType, IDialogueNode } from '../../@types/core'
 

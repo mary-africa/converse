@@ -1,7 +1,7 @@
 /**
  * Interfacing for the express application
  */
-import { HookedChatService, HookedStatefulChatService } from '../../../@types'
+import { HookedChatService, HookedStatefulChatService } from '../../../@types/new'
 
 /**
  * Creates a chat service that uses basic HTTP for communication

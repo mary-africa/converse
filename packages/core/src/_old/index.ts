@@ -1,6 +1,6 @@
-import { ChatState, StatefulMessage, DialogueSequenceMarker, ConverseAgent as IConverseAgent, Responder as IResponseBuilder, SequenceDialogueKey} from '../@types'
-import { IDialogueDefinitionObject } from '../@types/ddo'
-import { DialogueObjectType } from '../@types/core'
+import { ChatState, StatefulMessage, DialogueSequenceMarker, ConverseAgent as IConverseAgent, Responder as IResponseBuilder, SequenceDialogueKey} from '../../@types/old'
+import { IDialogueDefinitionObject } from '../../@types/old/ddo'
+import { DialogueObjectType } from '../../@types/old/core'
 
 import { DialogueObject } from './core'
 import { encode as Encode } from './core/encoder'
