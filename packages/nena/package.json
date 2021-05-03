@@ -1,0 +1,45 @@
+{
+  "name": "@converse/nena",
+  "version": "0.0.1",
+  "description": "Building the converse agents with Nena",
+  "main": "dist/index.js",
+  "scripts": {
+    "tsc": "npx tsc -p .",
+    "build": "yarn run tsc",
+    "test": "jest",
+    "start": "yarn build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mary-africa/converse.git"
+  },
+  "keywords": [
+    "chatbot",
+    "dialogue",
+    "nlp",
+    "swahili"
+  ],
+  "author": "Kevin James",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/mary-africa/converse/issues"
+  },
+  "homepage": "https://github.com/mary-africa/converse/packages/nena#readme",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "immer": "^9.0.1",
+    "js-levenshtein": "^1.1.6"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.14.0",
+    "@types/express": "^4.17.11",
+    "@types/jest": "^26.0.23",
+    "@types/node": "^14.14.37",
+    "jest": "^26.6.3",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.2.3"
+  }
+}

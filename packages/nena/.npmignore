@@ -1,0 +1,7 @@
+tests/
+node_modules/
+src/
+sample/
+
+.env
+.env.*
