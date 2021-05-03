@@ -1,8 +1,9 @@
 {
-  "name": "@converse/core",
+  "name": "converse-core",
   "version": "0.2-busted",
   "description": "Creating Conversational Agents (Nena Converse agents)",
   "main": "dist/index.js",
+  "types": "./index.d.ts",
   "scripts": {
     "tsc": "npx tsc -p .",
     "build": "yarn run tsc",
