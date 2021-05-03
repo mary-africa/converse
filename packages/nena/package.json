@@ -1,5 +1,5 @@
 {
-  "name": "@converse/nena",
+  "name": "converse-nena",
   "version": "0.0.1",
   "description": "Building the converse agents with Nena",
   "main": "dist/index.js",

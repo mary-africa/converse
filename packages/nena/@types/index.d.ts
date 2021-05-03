@@ -5,7 +5,7 @@ import {
     DialogueItem as CoreDialogueItem,
     DDO as CoreDDO,
     MatchRule
-} from '../../core'
+} from '../../core/typings'
 
 /**
  * The main dialogue object interface.
