@@ -5,7 +5,7 @@ export default class Agent<Intent extends string, DialogueKey extends string, Ma
      * Mutators for agent
      */
     private mutators: { 
-        [mutatorId in Agent.MutationAtType]: { action: Agent.Mutator }
+        [mutatorId in Agent.MutationAtType]?: Agent.Mutator
     }
 
     /**
@@ -25,7 +25,7 @@ export default class Agent<Intent extends string, DialogueKey extends string, Ma
     removeMutation(at: Agent.MutationAtType);
 }
 
-declare namespace Agent {
+export declare namespace Agent {
     
     // actions responsible in modifying the data shape
     // ----------------------------------------------
@@ -54,7 +54,7 @@ declare namespace Agent {
 
     export interface Actions<MatchRuleType extends string> {
         selectors: {
-            [selector in MatchRuleType]: (message: string) => void
+            [selector in MatchRuleType]?: (message: string) => void
         }
     }
 }
