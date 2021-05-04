@@ -14,7 +14,7 @@ export class Node<Option extends string> {
     setActionId(on: Node.ActionType, id: string)
     removeActionId(on: Node.ActionType)
 
-    getStaticInput<T>(input: T): Option 
+    getStaticInput<T>(input: T): Option
 }
 
 interface GeneralOptions {
@@ -23,8 +23,8 @@ interface GeneralOptions {
 
 export default class Dialogue <NodeOption extends string> {
     private options: Dialogue.Options
-    private ac: Agent.Context
-    private self: Dialogue.Object<NodeOption>
+    private readonly ac: Agent.Context
+    private readonly self: Dialogue.Object<NodeOption>
 
     private mutators: { [mutatorId in Dialogue.MutationType]?: Dialogue.Mutator }
     private actions: { [action in Dialogue.ActionType]?: Dialogue.Action }

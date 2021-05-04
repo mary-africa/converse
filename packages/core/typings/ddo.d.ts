@@ -12,7 +12,7 @@ export default interface DDO<
     /**
      * Dialogues
      */
-    dialogues: { [key in DialogueKey]: Dialogue.Object<string> }
+    dialogues: { [key in DialogueKey]: Dialogue.Object<NodeOption> }
     
     /**
      * Intentions
