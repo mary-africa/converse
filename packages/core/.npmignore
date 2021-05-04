@@ -1,7 +1,11 @@
-tests/
-node_modules/
-src/
-sample/
+__tests__
+node_modules
+src
 
-.env
-.env.*
+# TODO: remove this folder entirely
+@types
+
+.gitignore
+jest.config.ts
+tsconfig.json
+yarn.lock

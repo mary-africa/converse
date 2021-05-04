@@ -1,8 +1,10 @@
 sample/
 tests/
 .github
+
 node_modules/
 packages/
+packages/core/
 
 .gitignore
 *.lock

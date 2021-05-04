@@ -74,9 +74,9 @@
     "removeComments": true
   },
   "exclude": [
-    "node_modules", "dist"
+    "node_modules", "dist", "@types", "./src/_old"
   ],
   "include": [
-    "./src" , "./@types"
-, "index.d.ts"  ]
+    "./src" , "./typings"
+  ]
 }

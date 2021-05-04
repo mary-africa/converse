@@ -1,14 +1,14 @@
 {
+  "private": true,
   "name": "converse-core",
-  "version": "0.2-busted",
-  "description": "Creating Conversational Agents (Nena Converse agents)",
+  "version": "0.2.0-alpha",
+  "description": "Building conversational agents - one step at a time",
   "main": "dist/index.js",
   "types": "./typings",
   "scripts": {
     "tsc": "npx tsc -p .",
     "build": "yarn run tsc",
-    "test": "jest",
-    "start": "yarn build"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -16,6 +16,7 @@
   },
   "keywords": [
     "chatbot",
+    "agents",
     "dialogue"
   ],
   "author": "Kevin James",
@@ -24,9 +25,7 @@
     "url": "https://github.com/mary-africa/converse/issues"
   },
   "homepage": "https://github.com/mary-africa/converse/packages/core#readme",
-  "dependencies": {
-    "immer": "^9.0.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/jest": "^26.0.23",
     "@types/node": "^14.14.37",
