@@ -1,11 +1,38 @@
 import DDO from './ddo'
 
-export default class Agent<MatchRuleType extends string> {
-    constructor (ddo: DDO, context: Agent.Context<MatchRuleType>, actions: Agent.Actions<MatchRuleType>);
+export default class Agent<Intent extends string, DialogueKey extends string, MatchRuleType extends string> {
+    /**
+     * Mutators for agent
+     */
+    private mutators: { 
+        [mutatorId in Agent.MutationAtType]: { action: Agent.Mutator }
+    }
+
+    /**
+     * Configutations for setting up 
+     * the agent's behaviour
+     */
+    private config: Agent.Config<MatchRuleType>
+
+    /**
+     * Contextual information used across the 
+     * entire agent
+     */
+    private context: Agent.Context
+
+    constructor (ddo: DDO<Intent, DialogueKey>, config: Agent.Config<MatchRuleType>, context: Agent.Context);
+    setMutation(at: Agent.MutationAtType, mutator: Agent.Mutator);
+    removeMutation(at: Agent.MutationAtType);
 }
 
 declare namespace Agent {
-    export interface Context<MatchRuleType extends string> {
+    
+    // actions responsible in modifying the data shape
+    // ----------------------------------------------
+    type MutationAtType = 'preprocess' | 'postprocess'
+    type Mutator = <T> (input: string) => T
+
+    export interface Config<MatchRuleType extends string> {
         /**
          * Rules used in decision points
          */
@@ -18,12 +45,11 @@ declare namespace Agent {
          * default: true
          * FUTURE-FEAT: if false, then matchRules 'MUST' exist
          */
-        allowExactRule: boolean
+        enableExactMatchRule?: boolean
+    }
 
-        /**
-         * Extended context
-         */
-        [id: string]: string
+    export interface Context {
+        [id: string]: any
     }
 
     export interface Actions<MatchRuleType extends string> {
