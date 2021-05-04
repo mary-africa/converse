@@ -2,22 +2,24 @@
  * The main dialogue object interface.
  */
 export class Node<Option extends string> {
-    constructor (node: Dialogue.Node<Option>);
+    private options?: NodeOptions
+    
+    constructor (node: Dialogue.Node<Option>, options?: NodeOptions);
+    next(): Node<Option>
 }
 
+interface GeneralOptions { 
+    onEnter: Function 
+    onExit: Function 
+    preprocess: <T> (input: string) => T, 
+    postprocess: <T> (input: string) => T  
+}
+interface NodeOptions extends GeneralOptions {}
+
 export default class Dialogue <NodeOption extends string> {
-    /**
-     * action handler when we enter the dialogue
-     */
-    private onEnter: Function
+    private options?: Dialogue.Options
 
-    /**
-     * action handler when exit the dialogue
-     */
-    private onExit: Function
-
-    constructor(object: Dialogue.Object<NodeOption>, options: { onEnter: Function, onExit: Function });
-    next(): Node<NodeOption>
+    constructor(object: Dialogue.Object<NodeOption>, options?: Dialogue.Options);
 }
 
 export declare namespace Dialogue {
@@ -29,6 +31,8 @@ export declare namespace Dialogue {
             [node in NodeOption]: Dialogue.Node<NodeOption>
         }
     }
+
+    export interface Options extends GeneralOptions {}
     
     /**
      * Information about the dialog node.
