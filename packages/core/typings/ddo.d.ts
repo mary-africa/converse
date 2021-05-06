@@ -21,14 +21,6 @@ export default interface DDO<
     intentions: { [intent in IntentType]: DDO.ItemResponse<DialogueKey> | DDO.ItemDKey<DialogueKey> }
 
     /**
-     * Definition when dialogue is 'exit'
-     */
-    exit: {
-        response?: string
-        match: MultValType<string>
-    }
-
-    /**
      * Function that matches the node to the next node
      */
     matcher?: MatchRuleType
