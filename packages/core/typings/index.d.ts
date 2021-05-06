@@ -10,6 +10,9 @@ export default class Agent<Intent extends string, DialogueKey extends string, Ma
     // matcher for initial dialogue
     // TODO: maybe remove this?
     setMatcher<K, T>(matchRule: MatchRuleType, matcher: (input: K, options: T, context: Agent.Context) => null | NodeOption)
+    
+    // get the next item
+    next(input?: string) // Get the next node 
 }
 
 export declare namespace Agent {

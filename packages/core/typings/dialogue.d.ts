@@ -71,7 +71,7 @@ export default class Dialogue <NodeOption extends string, MatchRuleType extends 
     /**
      * Actions
      */
-    setNodeAction<NodeOption extends string> (node: NodeOption, on: Node.ActionType, action: Node.Action<NodeOption>): string;
+    setNodeAction(node: NodeOption, on: Node.ActionType, action: Node.Action<NodeOption>): string;
     removeNodeAction(actionId: Node.ActionId)
 
     // matcher for initial dialogue
@@ -81,6 +81,7 @@ export default class Dialogue <NodeOption extends string, MatchRuleType extends 
 export declare namespace Node {
     type ActionId = { on: ActionType, key: string }
     type ActionType = 'enter' | 'exit'
+    // FIXME: fixing the data
     type Action <NodeOption extends string> = (dialogueContext: Dialogue.Context<NodeOption>) => Promise<void>
 
     type MutatorId = { at: MutationType, key: string }
@@ -174,6 +175,9 @@ export declare namespace Dialogue {
          * Customs 
          */
         with?: { [x: string]: any }
+
+        // go to the next item
+        immediate?: boolean
     
         /**
          * Nature: Static / Dynamic
