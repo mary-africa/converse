@@ -1,28 +1,15 @@
 import DDO from './ddo'
+import Dialogue, { Dialogue as NsDialogue } from './dialogue'
 
 export default class Agent<Intent extends string, DialogueKey extends string, MatchRuleType extends string> {
-    /**
-     * Mutators for agent
-     */
-    private mutators: { 
-        [mutatorId in Agent.MutationAtType]?: Agent.Mutator
-    }
-
-    /**
-     * Configutations for setting up 
-     * the agent's behaviour
-     */
-    private config: Agent.Config<MatchRuleType>
-
-    /**
-     * Contextual information used across the 
-     * entire agent
-     */
-    private context: Agent.Context
-
     constructor (ddo: DDO<Intent, DialogueKey>, config: Agent.Config<MatchRuleType>, context: Agent.Context);
     setMutation(at: Agent.MutationAtType, mutator: Agent.Mutator);
     removeMutation(at: Agent.MutationAtType);
+    dialogue<T>(dialogueKey: DialogueKey): Dialogue<T, MatchRuleType>/* NsDialogue.Object<T, MatchRuleType> */
+
+    // matcher for initial dialogue
+    // TODO: maybe remove this?
+    setMatcher<K, T>(matchRule: MatchRuleType, matcher: (input: K, options: T, context: Agent.Context) => null | NodeOption)
 }
 
 export declare namespace Agent {

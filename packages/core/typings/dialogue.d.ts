@@ -21,7 +21,7 @@ interface GeneralOptions {
     verbose: boolean
 }
 
-export default class Dialogue <NodeOption extends string> {
+export default class Dialogue <NodeOption extends string, MatchRuleType extends string> {
     private options: Dialogue.Options
     private readonly ac: Agent.Context
     private readonly self: Dialogue.Object<NodeOption>
@@ -32,7 +32,7 @@ export default class Dialogue <NodeOption extends string> {
     private actionMutationIds: { [mutatorId in Node.MutatorId]?: Node.Mutator }
     private nodeActionIds: { [actionId in Node.ActionId]?: Node.Action }
 
-    constructor(object: Dialogue.Object<NodeOption>, agentContext: Agent.Context, options?: Dialogue.Options);
+    constructor(object: Dialogue.Object<NodeOption, MatchRuleType>, agentContext: Agent.Context, options?: Dialogue.Options);
 
     // DIALOGUE related operations
     // ------------------------------------
@@ -42,7 +42,7 @@ export default class Dialogue <NodeOption extends string> {
      * string that enters the dialogue
      * @returns mutatorId
      */
-    setMutation(at: Dialogue.MutationType, mutator: Dialogue.Mutator);
+    setMutation<T>(at: Dialogue.MutationType, mutator: Dialogue.Mutator<T>): Dialogue<NodeOption, MatchRuleType>;
 
     /**
      * Removes the mutation
@@ -52,7 +52,7 @@ export default class Dialogue <NodeOption extends string> {
     /**
      * Action that should execute when and action is triggered
      */
-    setAction(on: Dialogue.ActionType, action: Dialogue.Action);
+    setAction<T>(on: Dialogue.ActionType, action: Dialogue.Action<T>): Dialogue<NodeOption, MatchRuleType>;
 
     /**
      * Removes an action
@@ -65,24 +65,27 @@ export default class Dialogue <NodeOption extends string> {
     /**
      * Mutation
      */
-    setNodeMutation(node: NodeOption, at: Node.MutationType, mutator: Node.Mutator): string;
+    setNodeMutation<T>(node: NodeOption, at: Node.MutationType, mutator: Node.Mutator<T>): string;
     removeNodeMutation(mutatorId: Node.MutatorId)
 
     /**
      * Actions
      */
-    setNodeAction(node: NodeOption, on: Node.ActionType, action: Node.Action): string;
+    setNodeAction<NodeOption extends string> (node: NodeOption, on: Node.ActionType, action: Node.Action<NodeOption>): string;
     removeNodeAction(actionId: Node.ActionId)
+
+    // matcher for initial dialogue
+    setMatcher<K, T>(matchRule: MatchRuleType, matcher: (input: K, options: T, context: Agent.Context) => null | NodeOption): Dialogue<NodeOption, MatchRuleType>
 }
 
 export declare namespace Node {
     type ActionId = { on: ActionType, key: string }
     type ActionType = 'enter' | 'exit'
-    type Action = <NodeOption extends string> (dialogueContext: Dialogue.Context<NodeOption>) => Promise<void>
+    type Action <NodeOption extends string> = (dialogueContext: Dialogue.Context<NodeOption>) => Promise<void>
 
     type MutatorId = { at: MutationType, key: string }
     type MutationType = 'preprocess' | 'postprocess'
-    type Mutator = <T> (input: string) => T
+    type Mutator<T> = (input: string) => T
 
     interface Options extends GeneralOptions {
         /**
@@ -105,7 +108,7 @@ export declare namespace Dialogue {
 
     // actions responsible in modifying the data shape
     type MutationType = 'preprocess' | 'postprocess'
-    type Mutator = <T> (input: string) => T
+    type Mutator<T> = (input: string) => T
 
     interface Context<NodeOption extends string> {
         /**
@@ -118,21 +121,38 @@ export declare namespace Dialogue {
         agentContext: Agent.Context
     }
 
+    interface Base {
+        actions?: {
+            [on in ActionType]?: string
+        }
+
+        mutations?: {
+            [at in MutationType]?: string
+        }
+    }
+
     // Dialogue object as structure in a .ddo file
-    export interface Object<NodeOption extends string> {
+    export interface Object<NodeOption extends string, MatchRuleType extends string> extends Base {
         start: NodeOption
     
         nodes: {
-            [node in NodeOption]: Dialogue.Node<NodeOption>
+            [node in NodeOption]: Node<NodeOption, MatchRuleType>
         }
     }
 
     export interface Options extends GeneralOptions {}
+
+    enum GoTo {
+        /**
+         * This would point the node
+         */
+        Self = 0
+    }
     
     /**
      * Information about the dialog node.
      */
-    export interface Node<NodeOption> {
+    export interface Node<NodeOption extends string, MatchRuleType extends string> extends Base {
         /**
          * The text to show as text
          */
@@ -143,13 +163,32 @@ export declare namespace Dialogue {
              * Indentifier of the input
              */
             name: string
-        }
+        },
+
+        /**
+         * Function that matches the node to the next node
+         */
+        matcher?: MatchRuleType
+
+        /**
+         * Customs 
+         */
+        with?: { [x: string]: any }
     
         /**
          * Nature: Static / Dynamic
          * 
          * This can either be the next sequence node to work from
+         * 
+         * To enforce dynamic node: $
+         * enforce after postprocess mutation
+         * 
+         * Returns:
+         *  NodeOption - static node identifier
+         *  string - dynamic node identifier w/ $
+         *  true (boolean) - close
+         *  false (boolean) - reset
          */
-        next?: NodeOption | string
+        goTo?: NodeOption | string | GoTo.Self
     }
 }
