@@ -1,6 +1,6 @@
 import { Dialogue } from './dialogue'
 
-type MultValType<T> = T | T[]
+type MultValType<T> = T 
 
 /**
  * Main definition of the dialogue

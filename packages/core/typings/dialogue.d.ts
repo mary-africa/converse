@@ -158,16 +158,10 @@ export declare namespace Dialogue {
          * The text to show as text
          */
         text: string
-    
-        input?: {
-            /**
-             * Indentifier of the input
-             */
-            name: string
-        },
 
         /**
          * Function that matches the node to the next node
+         * // DEFAULT null (if null then go to immediate?)
          */
         matcher?: MatchRuleType
 
@@ -190,9 +184,9 @@ export declare namespace Dialogue {
          * Returns:
          *  NodeOption - static node identifier
          *  string - dynamic node identifier w/ $
-         *  true (boolean) - close
-         *  false (boolean) - reset
+         *  undefined | null - close (end the dialogue)
+         *  GoTo.Self (boolean) - this (but dont expect message printing)
          */
-        goTo?: NodeOption | string | GoTo.Self
+        goTo?: NodeOption | string | GoTo.Self | null
     }
 }
