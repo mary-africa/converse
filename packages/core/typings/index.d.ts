@@ -16,6 +16,17 @@ export default class Agent<Intent extends string, DialogueKey extends string, Di
             _agent: Readonly<{ context: Agent.Context, config: Agent.Config<DialogueMatchRuleType> }>
         ) => null | Intent
     )
+
+    /**
+     * Agent's logic for matching the input
+     * // this would use the setMatcher to match the inputs
+     */
+    match(input: K);
+
+    /**
+     * Matching algorithm for the exact string
+     */
+    private exactMatch<K>(input: K);
     
     // get the next item
     next(input?: string) // Get the next node 
