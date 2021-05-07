@@ -2,17 +2,19 @@ import DDO, { DDO as NsDDO } from './ddo'
 import Dialogue, { Dialogue as NsDialogue } from './dialogue'
 
 export default class Agent<Intent extends string, DialogueKey extends string, DialogueMatchRuleType extends string> {
+    public static DIALOGUE_GOTO_SELF: NsDialogue.GoTo.Self
+
     constructor (ddo: DDO<Intent, DialogueKey, AgentRuleType>, config: Partial<Agent.Config<DialogueMatchRuleType>>, context: Agent.Context);
-    setMutation(at: Agent.MutationAtType, mutator: Agent.Mutator);
+    setMutation<T>(at: Agent.MutationAtType, mutator: Agent.Mutator<T>);
     removeMutation(at: Agent.MutationAtType);
     dialogue<T>(dialogueKey: DialogueKey): Dialogue<T, DialogueMatchRuleType>/* NsDialogue.Object<T, MatchRuleType> */
 
     // matcher for initial dialogue
     // TODO: maybe remove this?
-    setMatcher<K, T>(
+    setMatcher<K>(
         matcher: (
             input: K, 
-            matchMap: { [intent in Intent]: DDO<Intent, Dialogue, AgentRuleType>['intentions'][intent]['toMatch'] }, 
+            matchMap: { [intent in Intent]: DDO<Intent, Dialogue>['intentions'][intent]['toMatch'] }, 
             _agent: Readonly<{ context: Agent.Context, config: Agent.Config<DialogueMatchRuleType> }>
         ) => null | Intent
     )
@@ -21,23 +23,36 @@ export default class Agent<Intent extends string, DialogueKey extends string, Di
      * Agent's logic for matching the input
      * // this would use the setMatcher to match the inputs
      */
-    match(input: K);
-
-    /**
-     * Matching algorithm for the exact string
-     */
-    private exactMatch<K>(input: K);
-    
-    // get the next item
-    next(input?: string) // Get the next node 
+    match<K>(input: K);
 }
 
 export declare namespace Agent {
+
+    type NodeMarker<Node> = {
+        index: number,
+        node?: Node,
+    }
+    
+    
+    interface State<Node, Intent> {
+        intent?: Intent | null
+    
+        /**
+         * Identifies staticly defined sequence
+         */
+        prevSequenceDialogue?: null | NodeMarker<Node>
+    
+        /**
+         * included `string` to account for dynamic matching of the sequences.
+         * This would include using something like seq-${number}-var
+         */
+        sequenceDialogue?: null | NodeMarker<Node | string>
+    }
     
     // actions responsible in modifying the data shape
     // ----------------------------------------------
     type MutationAtType = 'preprocess' | 'postprocess'
-    type Mutator = <T> (input: string) => T
+    type Mutator<T> =  (input: string) => T
 
     export interface Config<MatchRuleType extends string> {
         /**

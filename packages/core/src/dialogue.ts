@@ -1,11 +1,11 @@
 import { Agent } from '../typings'
 import { Node, Dialogue } from '../typings/dialogue'
 
-export class BaseNode<Option extends string> {
+export class BaseNode<Option extends string, MatchRuleType extends string> {
     private options: Node.Options
-    private self: Dialogue.Node<Option>
+    private self: Dialogue.Node<Option, MatchRuleType>
 
-    constructor (node: Dialogue.Node<Option>, options?: Partial<Node.Options>) {
+    constructor (node: Dialogue.Node<Option, MatchRuleType>, options?: Partial<Node.Options>) {
         this.self = node
         this.options = { verbose: true, actionIds: {}, mutatorIds: {}, ...options }
     }
@@ -17,7 +17,7 @@ export class BaseNode<Option extends string> {
     setMutatorId(at: Node.MutationType, id: string) {
         if (this.verbose) {
             if (this.options.mutatorIds[at] !== undefined)
-                console.warn(`You've replaced the existing mutation on '${at}' -> ${this.options.mutatorIds[at]}`)
+                console.warn(`Replacing an existing mutation on '${at}' -> ${this.options.mutatorIds[at]}`)
         }
 
         this.options.mutatorIds[at] = id
@@ -29,7 +29,7 @@ export class BaseNode<Option extends string> {
     setActionId(on: Node.ActionType, id: string) {
         if (this.verbose) {
             if (this.options.actionIds[on] !== undefined)
-                console.warn(`You've replaced the existing action on '${on}' -> ${this.options.actionIds[on]}`)
+                console.warn(`Replacing an existing action on '${on}' -> ${this.options.actionIds[on]}`)
         }
 
         this.options.actionIds[on] = id
@@ -42,23 +42,23 @@ export class BaseNode<Option extends string> {
     
 }
  
-export default class BaseDialogue<NodeOption extends string> {
+export default class BaseDialogue<NodeOption extends string, MatcherRuleType extends string> {
     private options: Dialogue.Options
     private ac: Agent.Context
-    private self: Dialogue.Object<NodeOption>
+    private self: Dialogue.Object<NodeOption, MatcherRuleType>
 
-    private mutators: { [mutatorId in Dialogue.MutationType]?: Dialogue.Mutator } = {}
+    private mutators: { [mutatorId in Dialogue.MutationType]?: Dialogue.Mutator<unknown> } = {}
     private actions: { [action in Dialogue.ActionType]?: Dialogue.Action } = {}
 
-    private nodeMutationIds: { [mutatorId in Node.MutatorId['key']]?: Node.Mutator } = {}
-    private nodeActionIds: { [actionId in Node.ActionId['key']]?: Node.Action } = {}
+    private nodeMutationIds: { [mutatorId in Node.MutatorId['key']]?: Node.Mutator<unknown> } = {}
+    private nodeActionIds: { [actionId in Node.ActionId['key']]?: Node.Action<NodeOption> } = {}
 
     private nodes: {
         // FIXME: remove the 'any' type param
-        [nodes in NodeOption]?: BaseNode<any>
+        [nodes in NodeOption]?: BaseNode<NodeOption, MatcherRuleType>
     }
 
-    constructor (object: Dialogue.Object<NodeOption>, agentContext: Agent.Context, options?: Dialogue.Options) {
+    constructor (object: Dialogue.Object<NodeOption, MatcherRuleType>, agentContext: Agent.Context, options?: Dialogue.Options) {
         this.ac = agentContext
         this.self = object
         this.options = { verbose: true, ...options } 
@@ -71,11 +71,11 @@ export default class BaseDialogue<NodeOption extends string> {
         return this.options.verbose    
     }
 
-    private setNode<Node extends NodeOption> (nodeId: Node, nodeObject: Dialogue.Node<Node>) {
+    private setNode<Node extends NodeOption> (nodeId: Node, nodeObject: Dialogue.Node<Node, MatcherRuleType>) {
         this.nodes[nodeId] = new BaseNode(nodeObject)
     }
 
-    private getNode<Node extends NodeOption>(nodeId: Node): BaseNode<Node> {
+    private getNode<Node extends NodeOption>(nodeId: Node): BaseNode<Node, MatcherRuleType> {
         if (this.nodes[nodeId] === undefined) {       
             // create node action id
             this.setNode(nodeId, this.self.nodes[nodeId])
@@ -91,7 +91,7 @@ export default class BaseDialogue<NodeOption extends string> {
      * -------------------------
      */
 
-    setMutation(at: Dialogue.MutationType, mutator: Dialogue.Mutator) {
+    setMutation<T>(at: Dialogue.MutationType, mutator: Dialogue.Mutator<T>) {
         if (this.verbose) {
             if (this.mutators[at] !== undefined)
                 console.warn(`Replacing the existing dialogue mutation on '${at}'`)
@@ -127,7 +127,7 @@ export default class BaseDialogue<NodeOption extends string> {
      * Node related operations
      * ------------------------
      */
-    setNodeMutation<Node extends NodeOption>(node: Node, at: Node.MutationType, mutator: Node.Mutator): Node.MutatorId {
+    setNodeMutation<Node extends NodeOption, T>(node: Node, at: Node.MutationType, mutator: Node.Mutator<T>): Node.MutatorId {
         const nodeMutationId = BaseDialogue.createNodeMutationId(at)
         const { key } = nodeMutationId
 
@@ -147,7 +147,7 @@ export default class BaseDialogue<NodeOption extends string> {
         this.nodeMutationIds[mutatorId.key] = undefined
     }
 
-    setNodeAction<Node extends NodeOption>(node: Node, on: Node.ActionType, action: Node.Action): Node.ActionId {
+    setNodeAction<Node extends NodeOption>(node: Node, on: Node.ActionType, action: Node.Action<Node>): Node.ActionId {
         const nodeActionId = BaseDialogue.createNodeActionId(on)
         const { key } = nodeActionId
 

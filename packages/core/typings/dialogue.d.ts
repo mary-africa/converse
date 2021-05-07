@@ -22,16 +22,6 @@ interface GeneralOptions {
 }
 
 export default class Dialogue <NodeOption extends string, MatchRuleType extends string> {
-    private options: Dialogue.Options
-    private readonly ac: Agent.Context
-    private readonly self: Dialogue.Object<NodeOption>
-
-    private mutators: { [mutatorId in Dialogue.MutationType]?: Dialogue.Mutator }
-    private actions: { [action in Dialogue.ActionType]?: Dialogue.Action }
-
-    private actionMutationIds: { [mutatorId in Node.MutatorId]?: Node.Mutator }
-    private nodeActionIds: { [actionId in Node.ActionId]?: Node.Action }
-
     constructor(object: Dialogue.Object<NodeOption, MatchRuleType>, agentContext: Agent.Context, options?: Dialogue.Options);
 
     // DIALOGUE related operations
