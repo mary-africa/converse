@@ -65,7 +65,14 @@ export default class Dialogue <NodeOption extends string, MatchRuleType extends 
     removeNodeAction(actionId: Node.ActionId)
 
     // matcher for initial dialogue
-    setMatcher<K, T>(matchRule: MatchRuleType, matcher: (input: K, options: T, context: Agent.Context) => null | NodeOption): Dialogue<NodeOption, MatchRuleType>
+    setMatcher<K, T>(matchRule: MatchRuleType, matcher: Dialogue.MatchFunction<K, T>): Dialogue<NodeOption, MatchRuleType>
+
+    /**
+     * agent reponder
+     * @param message 
+     * @param state 
+     */
+    respond<AgentMutatedType>(message: AgentMutatedType, state: Dialogue.NodeMarker<NodeOption> | null = null)
 }
 
 export declare namespace Node {
@@ -76,7 +83,7 @@ export declare namespace Node {
 
     type MutatorId = { at: MutationType, key: string }
     type MutationType = 'preprocess' | 'postprocess'
-    type Mutator<T> = (input: string) => T
+    type Mutator<T> = <DialogueMutatedType>(input: DialogueMutatedType) => T
 
     interface Options extends GeneralOptions {
         /**
@@ -93,13 +100,21 @@ export declare namespace Node {
     }
 }
 
+/**
+ * [namespace] Dialogue
+ */
 export declare namespace Dialogue {
+    type MatchFunction<K, T> = (input: K, options: T, context: Agent.Context) => null | NodeOption
     type ActionType = 'enter' | 'exit'
     type Action = () => Promise<void>
 
     // actions responsible in modifying the data shape
     type MutationType = 'preprocess' | 'postprocess'
-    type Mutator<T> = (input: string) => T
+    type Mutator<T> = <AgentMutatedType>(input: AgentMutatedType) => T
+
+    export interface NodeMarker<Node> {
+        node: Node,
+    }
 
     interface Context<NodeOption extends string> {
         /**

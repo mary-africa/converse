@@ -28,25 +28,25 @@ export default class Agent<Intent extends string, DialogueKey extends string, Di
 
 export declare namespace Agent {
 
-    type NodeMarker<Node> = {
+    
+    export interface DialogueMarker<Node extends string> {
         index: number,
-        node?: Node,
+        dialogue?: NsDialogue.NodeMarker<Node>,
     }
-    
-    
+
     interface State<Node, Intent> {
         intent?: Intent | null
     
         /**
          * Identifies staticly defined sequence
          */
-        prevSequenceDialogue?: null | NodeMarker<Node>
+        prevSequenceDialogue?: null | DialogueMarker<Node>
     
         /**
          * included `string` to account for dynamic matching of the sequences.
          * This would include using something like seq-${number}-var
          */
-        sequenceDialogue?: null | NodeMarker<Node | string>
+        sequenceDialogue?: null | DialogueMarker<Node | string>
     }
     
     // actions responsible in modifying the data shape

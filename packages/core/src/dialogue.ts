@@ -42,10 +42,12 @@ export class BaseNode<Option extends string, MatchRuleType extends string> {
     
 }
  
-export default class BaseDialogue<NodeOption extends string, MatcherRuleType extends string> {
+export default class BaseDialogue<NodeOption extends string, MatchRuleType extends string> {
     private options: Dialogue.Options
-    private ac: Agent.Context
-    private self: Dialogue.Object<NodeOption, MatcherRuleType>
+    private readonly ac: Agent.Context
+    private self: Dialogue.Object<NodeOption, MatchRuleType>
+
+    private matchers: { [matcher in MatchRuleType]?: Dialogue.MatchFunction<any, any> } = {}
 
     private mutators: { [mutatorId in Dialogue.MutationType]?: Dialogue.Mutator<unknown> } = {}
     private actions: { [action in Dialogue.ActionType]?: Dialogue.Action } = {}
@@ -55,10 +57,10 @@ export default class BaseDialogue<NodeOption extends string, MatcherRuleType ext
 
     private nodes: {
         // FIXME: remove the 'any' type param
-        [nodes in NodeOption]?: BaseNode<NodeOption, MatcherRuleType>
+        [nodes in NodeOption]?: BaseNode<NodeOption, MatchRuleType>
     }
 
-    constructor (object: Dialogue.Object<NodeOption, MatcherRuleType>, agentContext: Agent.Context, options?: Dialogue.Options) {
+    constructor (object: Dialogue.Object<NodeOption, MatchRuleType>, agentContext: Readonly<Agent.Context>, options?: Dialogue.Options) {
         this.ac = agentContext
         this.self = object
         this.options = { verbose: true, ...options } 
@@ -71,11 +73,64 @@ export default class BaseDialogue<NodeOption extends string, MatcherRuleType ext
         return this.options.verbose    
     }
 
-    private setNode<Node extends NodeOption> (nodeId: Node, nodeObject: Dialogue.Node<Node, MatcherRuleType>) {
+    mutate<AgentMutatedType>(at: Dialogue.MutationType, input: AgentMutatedType) {
+        const mutate = this.mutators[at]
+        return mutate !== undefined ? mutate(input) : input
+    }
+
+    performAction(on: Dialogue.ActionType) {
+        const action = this.actions[on]
+
+        if (action !== undefined)
+            action().finally(() => console.log("Completed execution"))
+    }
+
+    respond<AgentMutatedType>(message: AgentMutatedType, state: Dialogue.NodeMarker<NodeOption> | null = null) {
+        const _state: Dialogue.NodeMarker<NodeOption> = state === null ? { node: this.self.start } : state
+        let _message: any = message
+
+        // ENTER ACTION: check if the node marked is the first one
+        if (_state.node === this.self.start) this.performAction('enter');
+
+        // PREPOCESS MUTATION: Mutate before anyother thing
+        _message = this.mutate('preprocess', _message)
+
+        // actual playing around with the nodes
+
+        const _node = this.getNode(_state.node)
+
+        // perform action when leaving the dialogue
+        const { goTo } = this.getNodeObject(_state.node)
+
+        // EXIT ACTION: if the node is the last node... then exit
+        if (goTo === undefined || goTo === null) this.performAction('exit');
+
+        // POSTPROCESS MUTATION: Mutate as you are leaving the dialogue
+        _message = this.mutate('postprocess', _message)
+    }
+
+    /**
+     * Adding a matcher function bound by a matcher rule
+     */
+    setMatcher<K, T>(
+        matchRule: MatchRuleType, 
+        matcher: Dialogue.MatchFunction<K, T>
+    ): BaseDialogue<NodeOption, MatchRuleType> {
+        // add a matching rule
+        if (this.verbose) {
+            if (this.matchers[matchRule] !== undefined)
+                console.warn(`Replacing existing matching function for rule '${matchRule}'`)
+        }
+
+        this.matchers[matchRule] = matcher
+        return this
+    }
+
+    private setNode<Node extends NodeOption> (nodeId: Node, nodeObject: Dialogue.Node<Node, MatchRuleType>) {
         this.nodes[nodeId] = new BaseNode(nodeObject)
     }
 
-    private getNode<Node extends NodeOption>(nodeId: Node): BaseNode<Node, MatcherRuleType> {
+    private getNode<Node extends NodeOption>(nodeId: Node): BaseNode<Node, MatchRuleType> {
         if (this.nodes[nodeId] === undefined) {       
             // create node action id
             this.setNode(nodeId, this.self.nodes[nodeId])
@@ -84,6 +139,10 @@ export default class BaseDialogue<NodeOption extends string, MatcherRuleType ext
         // FIXME: remove the ts-ignore
         // @ts-ignore
         return this.nodes[nodeId]
+    }
+
+    getNodeObject(node: NodeOption): Dialogue.Node<NodeOption, MatchRuleType> {
+        return this.self.nodes[node]
     }
 
     /**

@@ -67,11 +67,11 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
     }
 
     beautifyState<T>(state?: Agent.State<T, Intent>): Agent.State<T, Intent> {
-        if (state === null || state !== undefined) {
-            return {}
+        if (state === null || state === undefined) {
+            return {} as Agent.State<T, Intent>
         }
 
-        return {} as Agent.State<T, Intent>
+        return state
     }
 
     chat <T>(message: string, state?: Agent.State<T, Intent>) {
