@@ -127,7 +127,7 @@ export default class BaseDialogue<NodeOption extends string, MatcherRuleType ext
      * Node related operations
      * ------------------------
      */
-    setNodeMutation<Node extends NodeOption, T>(node: Node, at: Node.MutationType, mutator: Node.Mutator<T>): Node.MutatorId {
+    setNodeMutation<T>(node: NodeOption, at: Node.MutationType, mutator: Node.Mutator<T>): Node.MutatorId {
         const nodeMutationId = BaseDialogue.createNodeMutationId(at)
         const { key } = nodeMutationId
 
@@ -138,7 +138,7 @@ export default class BaseDialogue<NodeOption extends string, MatcherRuleType ext
         return nodeMutationId
     }
 
-    removeNodeMutation<Node extends NodeOption>(node: Node, mutatorId: Node.MutatorId) {
+    removeNodeMutation(node: NodeOption, mutatorId: Node.MutatorId) {
         // remove from node
         let _node = this.getNode(node)
         _node.removeMutatorId(mutatorId.at)
@@ -147,7 +147,7 @@ export default class BaseDialogue<NodeOption extends string, MatcherRuleType ext
         this.nodeMutationIds[mutatorId.key] = undefined
     }
 
-    setNodeAction<Node extends NodeOption>(node: Node, on: Node.ActionType, action: Node.Action<Node>): Node.ActionId {
+    setNodeAction(node: NodeOption, on: Node.ActionType, action: Node.Action<NodeOption>): Node.ActionId {
         const nodeActionId = BaseDialogue.createNodeActionId(on)
         const { key } = nodeActionId
 
@@ -158,7 +158,7 @@ export default class BaseDialogue<NodeOption extends string, MatcherRuleType ext
         return nodeActionId
     }
 
-    removeNodeAction<Node extends NodeOption>(node: Node, actionId: Node.ActionId) {
+    removeNodeAction(node: NodeOption, actionId: Node.ActionId) {
         let _node = this.getNode(node)
         _node.removeActionId(actionId.on)
 

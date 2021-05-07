@@ -42,7 +42,7 @@ export default class Dialogue <NodeOption extends string, MatchRuleType extends 
     /**
      * Action that should execute when and action is triggered
      */
-    setAction<T>(on: Dialogue.ActionType, action: Dialogue.Action<T>): Dialogue<NodeOption, MatchRuleType>;
+    setAction(on: Dialogue.ActionType, action: Dialogue.Action): Dialogue<NodeOption, MatchRuleType>;
 
     /**
      * Removes an action
