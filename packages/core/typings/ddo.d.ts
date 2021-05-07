@@ -7,8 +7,7 @@ type MultValType<T> = T | T[]
  */
 export default interface DDO<
     IntentType extends string,
-    DialogueKey extends DDO.DialogueKeyType,
-    MatchRuleType extends string
+    DialogueKey extends DDO.DialogueKeyType
 > {
     /**
      * Dialogues
@@ -19,11 +18,6 @@ export default interface DDO<
      * Intentions
      */
     intentions: { [intent in IntentType]: DDO.ItemResponse<DialogueKey> | DDO.ItemDKey<DialogueKey> }
-
-    /**
-     * Function that matches the node to the next node
-     */
-    matcher?: MatchRuleType
 
     /**
      * Response Text for when there are no intentions matched
@@ -44,7 +38,7 @@ declare namespace DDO {
         /**
          * string(s) to match the intention
          */
-        match: MultValType<string>
+        toMatch: MultValType<string>
     
         /**
          * Dialogue keys from the dialogue object
