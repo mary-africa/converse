@@ -27,11 +27,9 @@ export default class Agent<Intent extends string, DialogueKey extends string, Di
 }
 
 export declare namespace Agent {
-
-    
     export interface DialogueMarker<Node extends string> {
         index: number,
-        dialogue?: NsDialogue.NodeMarker<Node>,
+        node?: Node,
     }
 
     interface State<Node, Intent> {

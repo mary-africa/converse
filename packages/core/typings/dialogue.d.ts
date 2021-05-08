@@ -4,9 +4,10 @@ import { Agent } from '.'
  * The main dialogue object interface.
  */
 export class Node<Option extends string> {
-    private options: Node.Options
-    
+    private readonly options: Node.Options
+
     constructor (node: Dialogue.Node<Option>, options?: Node.Options);
+    get object(): Dialogue.Node<Option, MatchRuleType>;
 
     setMutatorId(at: Node.MutationType, id: string)
     removeMutator(at: Node.MutationType)
@@ -14,16 +15,18 @@ export class Node<Option extends string> {
     setActionId(on: Node.ActionType, id: string)
     removeActionId(on: Node.ActionType)
 
-    getStaticInput<T>(input: T): Option
+    mutateId(at: Node.MutationType): string
+    actionId(on: Node.ActionType): string
+
+    next($?: string): Option | null | Dialogue.GoTo.Self
 }
 
 interface GeneralOptions {
     verbose: boolean
 }
 
-export default class Dialogue <NodeOption extends string, MatchRuleType extends string> {
-    constructor(object: Dialogue.Object<NodeOption, MatchRuleType>, agentContext: Agent.Context, options?: Dialogue.Options);
-
+export default class Dialogue<DialogueKey extends string, NodeOption extends string, MatchRuleType extends string> {
+    constructor (id: DialogueKey, object: Dialogue.Object<NodeOption, MatchRuleType>, agentContext: Readonly<Agent.Context>, options?: Partial<Dialogue.Options>)
     // DIALOGUE related operations
     // ------------------------------------
 
@@ -72,7 +75,13 @@ export default class Dialogue <NodeOption extends string, MatchRuleType extends 
      * @param message 
      * @param state 
      */
-    respond<AgentMutatedType>(message: AgentMutatedType, state: Dialogue.NodeMarker<NodeOption> | null = null)
+    respond<AgentMutatedType, DialogueMutatedType>(
+        message: AgentMutatedType, 
+        node: NodeOption | null = null
+    ): {
+        output: DialogueMutatedType, 
+        node: NodeOption | string | null | number
+    }
 }
 
 export declare namespace Node {
@@ -82,22 +91,10 @@ export declare namespace Node {
     type Action <NodeOption extends string> = (dialogueContext: Dialogue.Context<NodeOption>) => Promise<void>
 
     type MutatorId = { at: MutationType, key: string }
-    type MutationType = 'preprocess' | 'postprocess'
+    type MutationType = 'preprocess' // | 'postprocess'
     type Mutator<T> = <DialogueMutatedType>(input: DialogueMutatedType) => T
 
-    interface Options extends GeneralOptions {
-        /**
-         * Identifies what should be done 
-         * when entering a node / dialog
-         */
-        actionIds: {
-            [actionType in ActionType]?: string
-        }
-
-        mutatorIds: {
-            [mutationType in MutationType]?: string
-        }
-    }
+    interface Options extends GeneralOptions {}
 }
 
 /**
@@ -109,7 +106,7 @@ export declare namespace Dialogue {
     type Action = () => Promise<void>
 
     // actions responsible in modifying the data shape
-    type MutationType = 'preprocess' | 'postprocess'
+    type MutationType = 'preprocess' // | 'postprocess'
     type Mutator<T> = <AgentMutatedType>(input: AgentMutatedType) => T
 
     export interface NodeMarker<Node> {
@@ -146,7 +143,9 @@ export declare namespace Dialogue {
         }
     }
 
-    export interface Options extends GeneralOptions {}
+    export interface Options extends GeneralOptions {
+        id: string
+    }
 
     enum GoTo {
         /**

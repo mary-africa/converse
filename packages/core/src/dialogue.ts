@@ -1,48 +1,93 @@
 import { Agent } from '../typings'
 import { Node, Dialogue } from '../typings/dialogue'
 
+const dynNodeRegex = new RegExp(/[\w-_]*\$[\w-_]*/g)
+const replaceRegex = new RegExp(/\$/g)
+
 export class BaseNode<Option extends string, MatchRuleType extends string> {
     private options: Node.Options
+    public static GOTO_SELF: Dialogue.GoTo.Self = 0
+
+    /**
+     * Identifies what should be done 
+     * when entering a node / dialog
+     */
+    private actionIds: {
+        [actionType in Node.ActionType]?: string
+    } = {}
+    
+    private mutatorIds: {
+        [mutationType in Node.MutationType]?: string
+    } = {}
+
     private self: Dialogue.Node<Option, MatchRuleType>
 
     constructor (node: Dialogue.Node<Option, MatchRuleType>, options?: Partial<Node.Options>) {
         this.self = node
-        this.options = { verbose: true, actionIds: {}, mutatorIds: {}, ...options }
+        this.options = { verbose: true, ...options }
     }
 
-    private get verbose(): boolean {
-        return this.options.verbose    
-    }
+    private get verbose(): boolean { return this.options.verbose }
+
+    get text(): string { return this.self.text }
+    get object(): Dialogue.Node<Option, MatchRuleType>{ return this.self }
+    get matcher(): MatchRuleType | null { return this.self.matcher !== undefined ? this.self.matcher : null }
+
+    mutateId(at: Node.MutationType) { return this.mutatorIds[at] }
+    actionId(on: Node.ActionType) { return this.actionIds[on] }
 
     setMutatorId(at: Node.MutationType, id: string) {
         if (this.verbose) {
-            if (this.options.mutatorIds[at] !== undefined)
-                console.warn(`Replacing an existing mutation on '${at}' -> ${this.options.mutatorIds[at]}`)
+            if (this.mutatorIds[at] !== undefined)
+                console.warn(`Replacing an existing mutation on '${at}' -> ${this.mutatorIds[at]}`)
         }
 
-        this.options.mutatorIds[at] = id
+        this.mutatorIds[at] = id
     }
     removeMutatorId(at: Node.MutationType) {
-        this.options.mutatorIds[at] = undefined
+        this.mutatorIds[at] = undefined
     }
     
     setActionId(on: Node.ActionType, id: string) {
         if (this.verbose) {
-            if (this.options.actionIds[on] !== undefined)
-                console.warn(`Replacing an existing action on '${on}' -> ${this.options.actionIds[on]}`)
+            if (this.actionIds[on] !== undefined)
+                console.warn(`Replacing an existing action on '${on}' -> ${this.actionIds[on]}`)
         }
 
-        this.options.actionIds[on] = id
+        this.actionIds[on] = id
     }
 
-    removeActionId(on: Node.ActionType) {
-        this.options.actionIds[on] = undefined
-    }
+    removeActionId(on: Node.ActionType) { this.actionIds[on] = undefined }
 
+    /**
+     * 
+     * @param $ 
+     * @returns the next dialogue to visit
+     */
+    next($?: string): Option | null | Dialogue.GoTo.Self {
+        const { goTo = null } = this.object
+
+        if ($ === undefined) {
+            return goTo as Option | null
+        }
+        
+        if (goTo === null || goTo === undefined) return null
+        if (goTo === BaseNode.GOTO_SELF) return BaseNode.GOTO_SELF
+
+        // Convert dynamic to static node
+        const out = dynNodeRegex.exec(goTo as string)
+
+        // the next node. doesn't have a 
+        // dynamically rendable node key
+        if (out === null) return goTo as Option
+
+        // replace '$' with value as next node
+        return (goTo as string).replace(replaceRegex, $) as unknown as Option
+    }
     
 }
  
-export default class BaseDialogue<NodeOption extends string, MatchRuleType extends string> {
+export default class BaseDialogue<DialogueKey extends string, NodeOption extends string, MatchRuleType extends string> {
     private options: Dialogue.Options
     private readonly ac: Agent.Context
     private self: Dialogue.Object<NodeOption, MatchRuleType>
@@ -57,21 +102,26 @@ export default class BaseDialogue<NodeOption extends string, MatchRuleType exten
 
     private nodes: {
         // FIXME: remove the 'any' type param
-        [nodes in NodeOption]?: BaseNode<NodeOption, MatchRuleType>
+        [node in NodeOption]?: BaseNode<NodeOption, MatchRuleType>
     }
 
-    constructor (object: Dialogue.Object<NodeOption, MatchRuleType>, agentContext: Readonly<Agent.Context>, options?: Dialogue.Options) {
+    /**
+     * Inputs that have been passed in the data
+     */
+    private nodeInputs: {
+        [node in NodeOption]?: any
+    } = {}
+
+    constructor (id: DialogueKey, object: Dialogue.Object<NodeOption, MatchRuleType>, agentContext: Readonly<Agent.Context>, options?: Partial<Dialogue.Options>) {
         this.ac = agentContext
         this.self = object
-        this.options = { verbose: true, ...options } 
-
+    
+        this.options = { id, verbose: true, ...(options) } 
         // Build the nodes for the dialogue
         this.nodes = {}
     }
 
-    private get verbose(): boolean {
-        return this.options.verbose    
-    }
+    private get verbose(): boolean { return this.options.verbose }
 
     mutate<AgentMutatedType>(at: Dialogue.MutationType, input: AgentMutatedType) {
         const mutate = this.mutators[at]
@@ -85,28 +135,131 @@ export default class BaseDialogue<NodeOption extends string, MatchRuleType exten
             action().finally(() => console.log("Completed execution"))
     }
 
-    respond<AgentMutatedType>(message: AgentMutatedType, state: Dialogue.NodeMarker<NodeOption> | null = null) {
-        const _state: Dialogue.NodeMarker<NodeOption> = state === null ? { node: this.self.start } : state
+    nodeMutate<DialogueMutateType>(nodeMutationId: Node.MutatorId['key'], input: DialogueMutateType) {
+        const nodeMutate = this.nodeMutationIds[nodeMutationId]
+        return nodeMutate !== undefined ? nodeMutate(input) : input
+    }
+
+    async nodeAct(nodeActionId: Node.ActionId['key']) {
+        const nodeFn = this.nodeActionIds[nodeActionId]
+        if (nodeFn !== undefined) {
+            await nodeFn({
+                inputs: this.nodeInputs,
+                agentContext: this.ac
+            })
+        }
+    }
+
+    respond<AgentMutatedType>(
+        message: AgentMutatedType, 
+        node: NodeOption | null = null
+    ): { output: string, node: NodeOption | string | null | number } {
+        const nodeId = node === null ? this.self.start : node
         let _message: any = message
 
-        // ENTER ACTION: check if the node marked is the first one
-        if (_state.node === this.self.start) this.performAction('enter');
+        /**
+         * ENTER DIALOGUE
+         */
+        // DIALOGUE ENTER-ACTION: check if the node marked is the first one
+        if (node === null) this.performAction('enter');
 
-        // PREPOCESS MUTATION: Mutate before anyother thing
+        // DIALOGUE PREPROCESS: Mutate before anyother thing
         _message = this.mutate('preprocess', _message)
 
+        /**
+         * ENTER NODE
+         */
         // actual playing around with the nodes
+        const _node = this.getNode(nodeId)
 
-        const _node = this.getNode(_state.node)
+        if (node === null) {
+            // NODE ENTER-ACTION
+            const nodeEnterActionId = _node.actionId('enter')
+            if (nodeEnterActionId !== undefined) 
+                this.nodeAct(nodeEnterActionId)
 
-        // perform action when leaving the dialogue
-        const { goTo } = this.getNodeObject(_state.node)
+            return { 
+                output: _node.text,
 
-        // EXIT ACTION: if the node is the last node... then exit
-        if (goTo === undefined || goTo === null) this.performAction('exit');
+                // get the next node 
+                node: this.self.start
+            }
+        }       
 
-        // POSTPROCESS MUTATION: Mutate as you are leaving the dialogue
-        _message = this.mutate('postprocess', _message)
+        // NODE PREPROCESS
+        const preprocessId = _node.mutateId('preprocess')
+        if (preprocessId !== undefined)
+            _message = this.nodeMutate(preprocessId, _message)
+
+
+        // get the goTo logic
+        let goToNode: NodeOption | null | Dialogue.GoTo.Self = null
+
+        if (_node.matcher !== null) {
+            // Using matcher to make a decision on the input
+
+            const dialogMatcher = this.matchers[_node.matcher]
+            if (dialogMatcher === undefined) {
+                throw Error(`Node has matcher ('${_node.matcher}'), but matcher function is not create in dialogue`)
+            }
+
+            const _out: NodeOption | string | Dialogue.GoTo = dialogMatcher(_message, this.options, this.ac)
+
+            if (_out === BaseNode.GOTO_SELF) {
+                // get node
+                console.warn("Pointing to self")
+                throw new Error("HERE!!!")
+            }
+
+            goToNode = _node.next(_out)
+        } else {
+            goToNode = _node.next()
+        }
+
+        if (goToNode !== null) {
+            // check if the node exist
+            if (goToNode in this.nodes) {
+                console.warn(`The node '${goToNode}' doesn't exit in this dialogue`)
+                console.warn('Resetting to NULL')
+                // reset to null
+                goToNode = null
+            }
+        }
+
+        console.log("GoTo node:", goToNode)
+        
+
+        /**
+         * LEAVING NODE
+         */
+        // NODE POSTPROCESS
+        // const postProcessId = _node.mutateId('postprocess')
+        // if (postProcessId !== undefined) 
+        //     _message = this.nodeMutate(postProcessId, _message)
+        
+
+        // NODE EXIT-ACTION
+        const nodeExitActionId = _node.actionId('exit')
+        if (nodeExitActionId !== undefined) 
+            this.nodeAct(nodeExitActionId)
+
+        // // DIALOGUE POSTPROCESS: Mutate as you are leaving the dialogue
+        // _message = this.mutate('postprocess', _message)
+
+        /**
+         * LEAVING DIALOGUE
+         */
+
+        // DIALOGUE EXIT-ACTION: if the node is the last node... then exit
+        if (goToNode === null) this.performAction('exit');
+
+        return {
+            // output of the next message
+            output: _node.text,
+
+            // the new node to work on
+            node: goToNode
+        }
     }
 
     /**
@@ -115,7 +268,7 @@ export default class BaseDialogue<NodeOption extends string, MatchRuleType exten
     setMatcher<K, T>(
         matchRule: MatchRuleType, 
         matcher: Dialogue.MatchFunction<K, T>
-    ): BaseDialogue<NodeOption, MatchRuleType> {
+    ): BaseDialogue<DialogueKey, NodeOption, MatchRuleType> {
         // add a matching rule
         if (this.verbose) {
             if (this.matchers[matchRule] !== undefined)

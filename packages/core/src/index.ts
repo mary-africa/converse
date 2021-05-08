@@ -1,8 +1,9 @@
 import DialogueDefinition, { DDO } from '../typings/ddo'
-import { Dialogue } from '../typings/dialogue'
+import BaseDialogue, { Dialogue } from '../typings/dialogue'
 import { Agent } from '../typings'
+import { stateUpdate } from './utils'
 
-import BaseDialogue from './dialogue'
+// import BaseDialogue from './dialogue'
 
 export default class BaseAgent<Intent extends string, DialogueKey extends string, MatchRuleType extends string>{
     public static readonly DIALOGUE_GOTO_SELF: Dialogue.GoTo.Self = 0
@@ -19,7 +20,7 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
      */
     private dialogues: {
         // FIXME: remove the 'any' type param
-        [nodes in DialogueKey]: BaseDialogue<string, MatchRuleType>
+        [nodes in DialogueKey]: BaseDialogue<DialogueKey, string, MatchRuleType>
     }
 
     private readonly intentions: { [intent in Intent]: DDO.ItemResponse<DialogueKey> | DDO.ItemDKey<DialogueKey> }
@@ -55,14 +56,14 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
         this.fallbackText = fallbackText
 
         // set dialogues
-        this.dialogues = {} as {[nodes in DialogueKey]: BaseDialogue<string, MatchRuleType>}
+        this.dialogues = {} as {[nodes in DialogueKey]: BaseDialogue<DialogueKey, string, MatchRuleType>}
         Object.keys(dialogues).forEach(dk => {
-            this.dialogues[dk as DialogueKey] = new BaseDialogue(dialogues[dk as DialogueKey], this.context)
+            this.dialogues[dk as DialogueKey] = new BaseDialogue(dk, dialogues[dk as DialogueKey], this.context)
         })
     }
 
     // FIXME: remove the 'any' type param
-    dialogue(dialogueKey: DialogueKey): BaseDialogue<any, MatchRuleType> {
+    dialogue(dialogueKey: DialogueKey): BaseDialogue<DialogueKey, any, MatchRuleType> {
         return this.dialogues[dialogueKey]
     }
 
@@ -74,37 +75,79 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
         return state
     }
 
-    chat <T>(message: string, state?: Agent.State<T, Intent>) {
+    mutate(at: Agent.MutationAtType, input: string) {
+        const mutate = this.mutators[at]
+        return mutate !== undefined ? mutate(input) : input
+    }
+
+    chat <T extends string>(
+        message: string, 
+        state?: Agent.State<T, Intent>
+    ): { output: string, state: Agent.State<T, Intent>} {
         const freshState = this.beautifyState(state)
-        console.log(freshState)
+        let mutatedInput = this.mutate('preprocess', message)
 
         // match the intent
-        const matchedIntent = this.match(message) 
+        const matchedIntent = this.match(mutatedInput) 
 
         if (matchedIntent === null) {
             // output the fallback text where nothing is matched
             console.warn('Matching done. No matches found')
         } else {
-            const { response, dialogueKey } = this.intentions[matchedIntent]
-    
-            if (dialogueKey !== undefined) {
-                // chat in the dialogue
-                const dialogue = this.dialogue(dialogueKey)
+            const { response, dialogueKey = null } = this.intentions[matchedIntent]
+            const { sequenceDialogue } = freshState
 
-                throw new Error(`You are moving to the Dialogue<${dialogueKey}>`)
-            } else {
-                // there is a matchedIntent
-                if (response !== undefined) {
-                    return response
-                } else {
-                    console.warn(`Missing response text and dialogue for intent [${matchedIntent}]`)
-                    console.warn("Defaulting to 'fallbackText'")
+            // select item
+            let selectedDialogue = dialogueKey
+            
+            // check if the dialogue is a list
+            if (sequenceDialogue !== null && sequenceDialogue !== undefined) {
+                if (Array.isArray(dialogueKey)) {
+                    let index = 0
+
+                    const { index: iDialogue } = sequenceDialogue
+                    index = iDialogue
+                    
+                    // choosing the dialogue
+                    selectedDialogue = dialogueKey[index]
                 }
+                
+                if (selectedDialogue !== null) {                
+                    const { node: _node = null } = sequenceDialogue
+                    
+                    // chat in the dialogue
+                    const dialogue = this.dialogue(dialogueKey)
+                    
+                    // get dialogue
+                    const { output, node } = dialogue.respond<any, any>(
+                        mutatedInput, 
+                        // @ts-ignore
+                        _node
+                    )
+                    
+                    return {
+                        output, 
+                        state: stateUpdate(freshState, { 
+                            intent: matchedIntent, 
+                            // pointes to the next node
+                            nextSequenceDialogue: { index: selectedDialogue, node } 
+                        }) 
+                    }
+                }
+            } 
+            
+            // Making the response
+            // there is a matchedIntent
+            if (response !== undefined) {
+                return { output: response, state: { intent: matchedIntent } }
+            } else {
+                console.warn(`Missing response text and dialogue for intent [${matchedIntent}]`)
+                console.warn("Defaulting to 'fallbackText'")
             }
         }
 
         // output fallback text
-        return this.fallbackText
+        return { output: this.fallbackText, state: {} }
     }
 
     setMutation<T>(at: Agent.MutationAtType, mutator: Agent.Mutator<T>) {
@@ -153,13 +196,7 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
      * Matching logic. This takes uses a matcher, to match the 
      * [mutated] input against the `toMatch` items in each intent
      */
-    private match(input: string) {
-        // checking is there is a preprocessing mutation
-        let mutatedInput = input
-
-        if (this.mutators['preprocess'] !== undefined){
-            mutatedInput = this.mutators['preprocess'](input)
-        }
+    private match<T>(mutatedInput: T) {
 
         // Perform matching
         // --------------------------
@@ -189,7 +226,7 @@ This will default to returning 'null'`)
      * @type T mutated type
      */
     private exactMatch<T>(
-        input: T, 
+        mutatedInput: T, 
         matchList: { 
             intent: Intent,
             toMatch: DDO.Item<DialogueKey, T>['toMatch']
@@ -197,7 +234,7 @@ This will default to returning 'null'`)
     ): null | Intent {
         for (let matchItem of matchList) {
             // matching each item in the intent map
-            if (matchItem.toMatch.includes(input)) {
+            if (matchItem.toMatch.includes(mutatedInput)) {
                 return matchItem.intent
             }
         }
