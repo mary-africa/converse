@@ -207,7 +207,7 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
 
         // check if there is a matcher
         if (this.matcher !== undefined) {
-            return await this.matcher(mutatedInput, this.getMatchItemList())
+            return await this.matcher(mutatedInput, this.getMatchItemList(), this.context)
         } else {
             // check if exact matching is enabled
             if (this.config.enableExactMatchRule) {
