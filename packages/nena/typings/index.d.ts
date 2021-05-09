@@ -1,17 +1,18 @@
 import { IncomingHttpHeaders } from 'node:http'
-import BaseAgent, { Agent, DialogueDefinition as BaseDialogueDefinition } from '../../core'
-import ConverseDialogue from '../../core/typings/dialogue'
+import BaseAgent, { Agent, DialogueDefinition as BaseDialogueDefinition, DDO } from 'converse-core'
+import ConverseDialogue from 'converse-core/dialogue'
 
-class NenaConverseAgent<Intent extends string, DialogueKey extends string, DialogueMatchRuleType extends string> extends BaseAgent<Intent, DialogueKey, DialogueMatchRuleType> {
+
+declare class NenaConverseAgent<Intent extends string, DialogueKey extends string, DialogueMatchRuleType extends string> extends BaseAgent<Intent, DialogueKey, DialogueMatchRuleType, Nena.ConfigBase> {
     constructor (
-        ddo: NenaDialogueDefinition<Intent, DialogueKey, DialogueMatchRuleType>, 
-        config: Nena.ConfigBase & Partial<Agent.Config<DialogueMatchRuleType>>, 
+        ddo: DialogueDefinition<Intent, DialogueKey, DialogueMatchRuleType>, 
+        config: Partial<Agent.Config<DialogueMatchRuleType, Nena.ConfigBase>>, 
         context: Agent.Context
     );
 
     setMutation<T>(at: Agent.MutationAtType, mutator: Agent.Mutator<T>);
     removeMutation(at: Agent.MutationAtType);
-    dialogue<T>(dialogueKey: DialogueKey): ConverseDialogue<DialogueKey, T, DialogueMatchRuleType>
+    dialogue<T extends string>(dialogueKey: DialogueKey): ConverseDialogue<DialogueKey, T, DialogueMatchRuleType>
     setApiFetcher (fetcher: Nena.Fetcher<Intent>)
 }
 
