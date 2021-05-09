@@ -1,4 +1,4 @@
-// import ConverseDialogue from './dialogue'
+import ConverseDialogue from './dialogue'
 
 declare class ConverseAgent<Intent extends string, DialogueKey extends string, DialogueMatchRuleType extends string> {
     public static DIALOGUE_GOTO_SELF: Dialogue.GoTo.Self
@@ -6,7 +6,7 @@ declare class ConverseAgent<Intent extends string, DialogueKey extends string, D
     constructor (ddo: DialogueDefinition<Intent, DialogueKey, DialogueMatchRuleType>, config: Partial<Agent.Config<DialogueMatchRuleType>>, context: Agent.Context);
     setMutation<T>(at: Agent.MutationAtType, mutator: Agent.Mutator<T>);
     removeMutation(at: Agent.MutationAtType);
-    dialogue<T>(dialogueKey: DialogueKey): ConverseDialogue<T, DialogueMatchRuleType>
+    dialogue<T>(dialogueKey: DialogueKey): ConverseDialogue<DialogueKey, T, DialogueMatchRuleType>
     setMatcher<K>(
         matcher: (
             input: K, 
