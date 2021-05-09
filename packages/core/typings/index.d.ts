@@ -44,6 +44,11 @@ declare class ConverseAgent<Intent extends string, DialogueKey extends string, D
             _agent: Readonly<{ context: Agent.Context, config: Agent.Config<DialogueMatchRuleType> }>
         ) => Promise<null | Intent>
     )
+    
+    async chat <T extends string>(
+        message: string, 
+        state?: Agent.State<T, Intent>
+    ): Promise<{ output: string, state: Agent.State<T, Intent>}>
 
     /**
      * Agent's logic for matching the input
