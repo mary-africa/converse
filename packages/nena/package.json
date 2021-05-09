@@ -2,12 +2,11 @@
   "name": "converse-nena",
   "version": "0.0.1",
   "description": "Building the converse agents with Nena",
-  "main": "dist/index.js",
+  "main": "lib/index.js",
   "scripts": {
     "tsc": "npx tsc -p .",
     "build": "yarn run tsc",
-    "test": "jest",
-    "start": "yarn build"
+    "test": "jest"
   },
   "repository": {
     "type": "git",

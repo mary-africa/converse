@@ -1,7 +1,8 @@
-tests/
-node_modules/
-src/
-sample/
+__tests__
+node_modules
+src
+typings
 
-.env
-.env.*
+.gitignore
+jest.config.ts
+tsconfig.json
