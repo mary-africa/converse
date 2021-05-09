@@ -1,6 +1,6 @@
 // what's `converse-core`
 
-import { Nena, NenaDialogueDefinition } from '../typings'
+import { Nena, DialogueDefinition as NenaDialogueDefinition } from '../typings'
 import BaseAgent, { Agent } from '../../core'
 
 // const nenaMatcher = 
