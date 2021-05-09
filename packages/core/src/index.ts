@@ -237,9 +237,16 @@ This will default to returning 'null'`)
         }[]
     ): null | Intent {
         for (let matchItem of matchList) {
-            // matching each item in the intent map
-            if (matchItem.toMatch.includes(mutatedInput)) {
-                return matchItem.intent
+            let { toMatch, intent } = matchItem
+            if (Array.isArray(toMatch)) {
+                // matching each item in the intent map
+                if (toMatch.includes(mutatedInput)) {
+                    return intent
+                }
+            } else {
+                if (toMatch === mutatedInput) {
+                    return intent
+                }
             }
         }
 

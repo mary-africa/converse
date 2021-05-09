@@ -106,17 +106,17 @@ export declare namespace DDO {
         /**
          * This is skipped when there is dialogue
          */
-        response: string
+        response?: string
     
         /**
          * string(s) to match the intention
          */
-        toMatch: T[]
+        toMatch: T[] | T
     
         /**
          * Dialogue keys from the dialogue object
          */
-        dialogueKey: MultValType<DialogueKey>
+        dialogueKey?: MultValType<DialogueKey>
     }
 
     /**
