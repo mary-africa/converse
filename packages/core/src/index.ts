@@ -1,9 +1,4 @@
-import DialogueDefinition, { DDO } from '../typings/ddo'
-import BaseDialogue, { Dialogue } from '../typings/dialogue'
-import { Agent } from '../typings'
 import { stateUpdate } from './utils'
-
-// import BaseDialogue from './dialogue'
 
 export default class BaseAgent<Intent extends string, DialogueKey extends string, MatchRuleType extends string>{
     public static readonly DIALOGUE_GOTO_SELF: Dialogue.GoTo.Self = 0

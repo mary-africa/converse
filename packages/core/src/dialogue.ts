@@ -1,6 +1,3 @@
-import { Agent } from '../typings'
-import { Node, Dialogue } from '../typings/dialogue'
-
 const dynNodeRegex = new RegExp(/[\w-_]*\$[\w-_]*/g)
 const replaceRegex = new RegExp(/\$/g)
 

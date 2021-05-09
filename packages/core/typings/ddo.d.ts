@@ -1,11 +1,11 @@
-import { Dialogue } from './dialogue'
+// import { Dialogue } from './dialogue'
 
 type MultValType<T> = T 
 
 /**
  * Main definition of the dialogue
  */
-export default interface DDO<
+declare interface DialogueDefinition<
     IntentType extends string,
     DialogueKey extends DDO.DialogueKeyType,
     MatchRuleType extends string
@@ -26,11 +26,13 @@ export default interface DDO<
     fallbackText: string
 }
 
+export default DialogueDefinition
+
 declare namespace DDO {
     /**
      * Item description for the DDO
      */
-    export interface Item<DialogueKey extends string | number, T> {
+    interface Item<DialogueKey extends string | number, T> {
         /**
          * This is skipped when there is dialogue
          */
@@ -52,6 +54,6 @@ declare namespace DDO {
      */
     type DialogueKeyType = string | number
     
-    export type ItemResponse<DialogueKey extends DialogueKeyType> = Omit<Item<DialogueKey>, "dialogueKey">
-    export type ItemDKey<DialogueKey extends DialogueKeyType> = Omit<Item<DialogueKey>, "response">
+    type ItemResponse<DialogueKey extends DialogueKeyType> = Omit<Item<DialogueKey>, "dialogueKey">
+    type ItemDKey<DialogueKey extends DialogueKeyType> = Omit<Item<DialogueKey>, "response">
 }

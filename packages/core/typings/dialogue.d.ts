@@ -1,13 +1,20 @@
-import { Agent } from '.'
+// import { ConverseAgent } from '.'
+
+/**
+ * General options exposed for the rest of the interfaces
+ */
+interface GeneralOptions {
+    verbose: boolean
+}
 
 /**
  * The main dialogue object interface.
  */
-export class Node<Option extends string> {
+export declare class BaseNode<Option extends string> {
     private readonly options: Node.Options
 
-    constructor (node: Dialogue.Node<Option>, options?: Node.Options);
-    get object(): Dialogue.Node<Option, MatchRuleType>;
+    constructor (node: ConverseDialogue.Node<Option>, options?: Node.Options);
+    get object(): ConverseDialogue.Node<Option, MatchRuleType>;
 
     setMutatorId(at: Node.MutationType, id: string)
     removeMutator(at: Node.MutationType)
@@ -18,15 +25,12 @@ export class Node<Option extends string> {
     mutateId(at: Node.MutationType): string
     actionId(on: Node.ActionType): string
 
-    next($?: string): Option | null | Dialogue.GoTo.Self
+    next($?: string): Option | null | ConverseDialogue.GoTo.Self
 }
 
-interface GeneralOptions {
-    verbose: boolean
-}
 
-export default class Dialogue<DialogueKey extends string, NodeOption extends string, MatchRuleType extends string> {
-    constructor (id: DialogueKey, object: Dialogue.Object<NodeOption, MatchRuleType>, agentContext: Readonly<Agent.Context>, options?: Partial<Dialogue.Options>)
+declare class BaseDialogue<DialogueKey extends string, NodeOption extends string, MatchRuleType extends string> {
+    constructor (id: DialogueKey, object: BaseDialogue.Object<NodeOption, MatchRuleType>, agentContext: Readonly<ConverseAgent.Context>, options?: Partial<BaseDialogue.Options>)
     // DIALOGUE related operations
     // ------------------------------------
 
@@ -35,22 +39,22 @@ export default class Dialogue<DialogueKey extends string, NodeOption extends str
      * string that enters the dialogue
      * @returns mutatorId
      */
-    setMutation<T>(at: Dialogue.MutationType, mutator: Dialogue.Mutator<T>): Dialogue<NodeOption, MatchRuleType>;
+    setMutation<T>(at: BaseDialogue.MutationType, mutator: BaseDialogue.Mutator<T>): BaseDialogue<NodeOption, MatchRuleType>;
 
     /**
      * Removes the mutation
      */
-    removeMutation(at: Dialogue.MutationType);
+    removeMutation(at: BaseDialogue.MutationType);
 
     /**
      * Action that should execute when and action is triggered
      */
-    setAction(on: Dialogue.ActionType, action: Dialogue.Action): Dialogue<NodeOption, MatchRuleType>;
+    setAction(on: BaseDialogue.ActionType, action: BaseDialogue.Action): BaseDialogue<NodeOption, MatchRuleType>;
 
     /**
      * Removes an action
      */
-    removeAction(on: Dialogue.ActionType);
+    removeAction(on: BaseDialogue.ActionType);
 
     // Dialogue NODE related operations
     // ------------------------------------
@@ -68,7 +72,7 @@ export default class Dialogue<DialogueKey extends string, NodeOption extends str
     removeNodeAction(actionId: Node.ActionId)
 
     // matcher for initial dialogue
-    setMatcher<K, T>(matchRule: MatchRuleType, matcher: Dialogue.MatchFunction<K, T>): Dialogue<NodeOption, MatchRuleType>
+    setMatcher<K, T>(matchRule: MatchRuleType, matcher: BaseDialogue.MatchFunction<K, T>): BaseDialogue<NodeOption, MatchRuleType>
 
     /**
      * agent reponder
@@ -84,36 +88,38 @@ export default class Dialogue<DialogueKey extends string, NodeOption extends str
     }
 }
 
-export declare namespace Node {
-    type ActionId = { on: ActionType, key: string }
-    type ActionType = 'enter' | 'exit'
+export default BaseDialogue
+
+declare namespace Node {
+    export type ActionId = { on: ActionType, key: string }
+    export type ActionType = 'enter' | 'exit'
     // FIXME: fixing the data
-    type Action <NodeOption extends string> = (dialogueContext: Dialogue.Context<NodeOption>) => Promise<void>
+    export type Action <NodeOption extends string> = (dialogueContext: BaseDialogue.Context<NodeOption>) => Promise<void>
 
-    type MutatorId = { at: MutationType, key: string }
-    type MutationType = 'preprocess' // | 'postprocess'
-    type Mutator<T> = <DialogueMutatedType>(input: DialogueMutatedType) => T
+    export type MutatorId = { at: MutationType, key: string }
+    export type MutationType = 'preprocess' // | 'postprocess'
+    export type Mutator<T> = <DialogueMutatedType>(input: DialogueMutatedType) => T
 
-    interface Options extends GeneralOptions {}
+    export interface Options extends GeneralOptions {}
 }
 
 /**
  * [namespace] Dialogue
  */
-export declare namespace Dialogue {
-    type MatchFunction<K, T> = (input: K, options: T, context: Agent.Context) => null | NodeOption
-    type ActionType = 'enter' | 'exit'
-    type Action = () => Promise<void>
+declare namespace ConverseDialogue {
+    export type MatchFunction<K, T> = (input: K, options: T, context: ConverseAgent.Context) => null | NodeOption
+    export type ActionType = 'enter' | 'exit'
+    export type Action = () => Promise<void>
 
     // actions responsible in modifying the data shape
-    type MutationType = 'preprocess' // | 'postprocess'
-    type Mutator<T> = <AgentMutatedType>(input: AgentMutatedType) => T
+    export type MutationType = 'preprocess' // | 'postprocess'
+    export type Mutator<T> = <AgentMutatedType>(input: AgentMutatedType) => T
 
     export interface NodeMarker<Node> {
         node: Node,
     }
 
-    interface Context<NodeOption extends string> {
+    export interface Context<NodeOption extends string> {
         /**
          * Inputs of all the nodes in the dialogues
          */
@@ -121,10 +127,10 @@ export declare namespace Dialogue {
             [node in NodeOption]?: any
         }
 
-        agentContext: Agent.Context
+        agentContext: ConverseAgent.Context
     }
 
-    interface Base {
+    export interface Base {
         actions?: {
             [on in ActionType]?: string
         }
@@ -147,7 +153,7 @@ export declare namespace Dialogue {
         id: string
     }
 
-    enum GoTo {
+    export enum GoTo {
         /**
          * This would point the node
          */

@@ -1,12 +1,14 @@
-import DDO, { DDO as NsDDO } from './ddo'
-import Dialogue, { Dialogue as NsDialogue } from './dialogue'
+// import DDO, { DDO as NsDDO } from './ddo'
+// import Dialogue, { Dialogue as NsDialogue } from './dialogue'
 
-export default class Agent<Intent extends string, DialogueKey extends string, DialogueMatchRuleType extends string> {
+// export as namespace "converse-core";
+
+declare class Agent<Intent extends string, DialogueKey extends string, DialogueMatchRuleType extends string> {
     public static DIALOGUE_GOTO_SELF: NsDialogue.GoTo.Self
 
-    constructor (ddo: DDO<Intent, DialogueKey, AgentRuleType>, config: Partial<Agent.Config<DialogueMatchRuleType>>, context: Agent.Context);
-    setMutation<T>(at: Agent.MutationAtType, mutator: Agent.Mutator<T>);
-    removeMutation(at: Agent.MutationAtType);
+    constructor (ddo: DDO<Intent, DialogueKey, AgentRuleType>, config: Partial<ConverseAgent.Config<DialogueMatchRuleType>>, context: ConverseAgent.Context);
+    setMutation<T>(at: ConverseAgent.MutationAtType, mutator: ConverseAgent.Mutator<T>);
+    removeMutation(at: ConverseAgent.MutationAtType);
     dialogue<T>(dialogueKey: DialogueKey): Dialogue<T, DialogueMatchRuleType>/* NsDialogue.Object<T, MatchRuleType> */
 
     // matcher for initial dialogue
@@ -15,7 +17,7 @@ export default class Agent<Intent extends string, DialogueKey extends string, Di
         matcher: (
             input: K, 
             matchMap: { [intent in Intent]: DDO<Intent, Dialogue>['intentions'][intent]['toMatch'] }, 
-            _agent: Readonly<{ context: Agent.Context, config: Agent.Config<DialogueMatchRuleType> }>
+            _agent: Readonly<{ context: ConverseAgent.Context, config: ConverseAgent.Config<DialogueMatchRuleType> }>
         ) => null | Intent
     )
 
@@ -26,7 +28,9 @@ export default class Agent<Intent extends string, DialogueKey extends string, Di
     match<K>(input: K);
 }
 
-export declare namespace Agent {
+export default Agent
+
+declare namespace ConverseAgent {
     export interface DialogueMarker<Node extends string> {
         index: number,
         node?: Node,
