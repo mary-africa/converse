@@ -35,7 +35,7 @@ jobs:
           ${{ runner.os }}-yarn
           
     - name: "install packages"
-      run: cd packages/core && yarn install
+      run: cd packages/nena && yarn install
       
     - name: "test"
-      run: cd packages/core && yarn build && yarn test --ci
+      run: cd packages/nena && yarn build && yarn test --ci
