@@ -94,18 +94,37 @@ const nena_ddo = {
     },
 }
 
-const agent = new NenaAgent(
-    nena_ddo,
-    {
-        enableExactMatchRule: false,
-        apiKey: "<API_KEY>", 
-        baseApiUrl: "https://api.nena.mary.africa" 
-    },
-    { 
-        name: "Kevin"
-    }
-); 
- 
-test('Simple names', () => {
-    expect(1).toBe(1);
-});
+
+describe("Testing base components for nena", () => {
+    const apiKey = "<API_KEY>"
+    
+    const agentFactory = () => new NenaAgent(
+        nena_ddo,
+        {
+            enableExactMatchRule: false,
+            apiKey,
+            baseApiUrl: "https://api.nena.mary.africa" 
+        },
+        { 
+            name: "Kevin"
+        }
+    );
+
+    test("Working Api Fetcher", async () => {
+        const agent = agentFactory()
+        agent.setApiFetcher(async (url, data, header) => {
+            // matching apiKey
+            expect(data.apiKey).toBe(apiKey)
+
+            // matching intentions list
+            expect(data.payload.intentions).toContain(["greet", "tutorial", "assessment"])
+
+            return { output: { info: data.payload.intentions, results: 0 }}
+        })
+
+        expect(await agent.chat("asaadadasd")).toBe({
+            output: 'Habari zako kijani!',
+            state: { intent: 'greet' }
+        })
+    })
+})
