@@ -93,8 +93,6 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
             // output the fallback text where nothing is matched
             console.warn('Matching done. No matches found')
         } else {
-            console.log("matchedIntent:", matchedIntent)
-
             const { response = undefined, dialogueKey = null } = this.intentions[matchedIntent]
             const { sequenceDialogue } = freshState
 
