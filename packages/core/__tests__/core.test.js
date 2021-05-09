@@ -107,7 +107,6 @@ agent.dialogue('assessmentDiag')
     .setAction('enter', async () => {
         // Doing some actions
         // when entering the dialogue
-        console.log("DOING THE ACTION")
     })
     
 agent.dialogue('assessmentDiag')
@@ -117,24 +116,23 @@ agent.dialogue('assessmentDiag')
         console.log("LEAVING LAST NODE")
     })
 
+describe("Testing for basic agent operation", () => {
+    test('Trying "habari" on a bot', async () => {
+        // actually using the bot
+        expect(await agent.chat("habari", {}))
+            .toStrictEqual({
+                output: "Habari zako kijani!",
+                state: { intent: "greet" }
+            })
+    });
+    
+    test('Trying accessing `assessmentDiag` using -> swali', async () => {
+        // actually using the bot
+        expect(await agent.chat("swali", {}))
+            .toStrictEqual({
+                output: 'text from a01',
+                state: { intent: 'assessment', sequenceDialogue: { index: 0, node: 'a01' } }
+            })
+    });
+})
 
-/**
- * Testing to see if the agent will actually greet
- */
-test('Trying "habari" on a bot', async () => {
-    // actually using the bot
-    expect(await agent.chat("habari", {}))
-        .toStrictEqual({ 
-            output: "Habari zako kijani!",
-            state: { intent: "greet" }
-        })
-});
-
-test('Trying accessing `assessmentDiag` using -> swali', async () => {
-    // actually using the bot
-    expect(await agent.chat("swali", {}))
-        .toStrictEqual({
-            output: 'text from a01',
-            state: { intent: 'assessment', sequenceDialogue: { index: 0, node: 'a01' } }
-        })
-});
