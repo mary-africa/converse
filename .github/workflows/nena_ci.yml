@@ -1,14 +1,18 @@
-name: CI
+name: nena-ci
 
 on:
   push:
     branches: [ main ]
+    paths:
+      - "packages/nena/**"
   pull_request:
     branches: [ main ]
+    paths:
+      - "packages/nena/**"
 
 jobs:
   test:
-    name: CI
+    name: converse-nena
     runs-on: ubuntu-latest
 
     strategy:
@@ -25,10 +29,13 @@ jobs:
       id: yarn-cache
       with:
         path: |
-          .yarn/cache
+          packages/nena/.yarn/cache
         key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
         restore-keys: |
           ${{ runner.os }}-yarn
           
-    - run: yarn install
-    - run: yarn test --ci
+    - name: "install packages"
+      run: cd packages/core && yarn install
+      
+    - name: "test"
+      run: cd packages/core && yarn build && yarn test --ci
