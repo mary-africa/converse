@@ -24,7 +24,9 @@
     "url": "https://github.com/mary-africa/converse/issues"
   },
   "homepage": "https://github.com/mary-africa/converse/packages/nena#readme",
-  "dependencies": {},
+  "dependencies": {
+    "immer": "^9.0.2"
+  },
   "devDependencies": {
     "@types/jest": "^26.0.23",
     "@types/node": "^14.14.37",
