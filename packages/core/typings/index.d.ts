@@ -1,4 +1,4 @@
-import ConverseDialogue from './dialogue'
+import ConverseDialogue, { Node, Dialogue } from './dialogue'
 
 declare class ConverseAgent<Intent extends string, DialogueKey extends string, DialogueMatchRuleType extends string, AgentExtendedConfig> {
     public static DIALOGUE_GOTO_SELF: Dialogue.GoTo.Self
@@ -6,7 +6,7 @@ declare class ConverseAgent<Intent extends string, DialogueKey extends string, D
         [mutatorId in Agent.MutationAtType]?: Agent.Mutator<any>
     }
 
-    protected readonly config: Agent.Config<MatchRuleType, AgentExtendedConfig>;
+    protected readonly config: Agent.Config<DialogueMatchRuleType, AgentExtendedConfig>;
     protected readonly context: Agent.Context;
 
     /**
@@ -14,7 +14,7 @@ declare class ConverseAgent<Intent extends string, DialogueKey extends string, D
      */
     protected dialogues: {
         // FIXME: remove the 'any' type param
-        [nodes in DialogueKey]: BaseDialogue<DialogueKey, string, MatchRuleType>
+        [nodes in DialogueKey]: ConverseDialogue<DialogueKey, string, DialogueMatchRuleType>
     }
 
     protected readonly intentions: { [intent in Intent]: DDO.Item<DialogueKey, any> }
@@ -32,20 +32,20 @@ declare class ConverseAgent<Intent extends string, DialogueKey extends string, D
         }[],
         ...args: any | undefined) => null | Intent
 
-    constructor (ddo: DialogueDefinition<Intent, DialogueKey, DialogueMatchRuleType>, config: Partial<Agent.Config<DialogueMatchRuleType>>, context: Agent.Context);
+    constructor (ddo: DialogueDefinition<Intent, DialogueKey, DialogueMatchRuleType>, config: Partial<Agent.Config<DialogueMatchRuleType, AgentExtendedConfig>>, context: Agent.Context);
     setMutation<T>(at: Agent.MutationAtType, mutator: Agent.Mutator<T>);
     removeMutation(at: Agent.MutationAtType);
-    dialogue<T>(dialogueKey: DialogueKey): ConverseDialogue<DialogueKey, T, DialogueMatchRuleType>
+    dialogue<T extends string>(dialogueKey: DialogueKey): ConverseDialogue<DialogueKey, T, DialogueMatchRuleType>
     
     setMatcher<K>(
         matcher: (
             input: K, 
             matchMap: { [intent in Intent]: DialogueDefinition<Intent, DialogueKey, DialogueMatchRuleType>['intentions'][intent]['toMatch'] }, 
-            _agent: Readonly<{ context: Agent.Context, config: Agent.Config<DialogueMatchRuleType> }>
+            _agent: Readonly<{ context: Agent.Context, config: Agent.Config<DialogueMatchRuleType, AgentExtendedConfig> }>
         ) => Promise<null | Intent>
     )
     
-    async chat <T extends string>(
+    chat <T extends string>(
         message: string, 
         state?: Agent.State<T, Intent>
     ): Promise<{ output: string, state: Agent.State<T, Intent>}>
@@ -75,7 +75,7 @@ export declare namespace Agent {
         index: number,
         node?: Node,
     }
-    interface State<Node, Intent> {
+    interface State<Node extends string, Intent> {
         intent?: Intent | null
 
         /**

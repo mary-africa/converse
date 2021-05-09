@@ -1,3 +1,5 @@
+import ConverseAgent, { Agent } from '.'
+
 /**
  * General options exposed for the rest of the interfaces
  */
@@ -28,7 +30,7 @@ export declare class BaseNode<Option extends string, MatchRuleType extends strin
 
 
 declare class ConverseDialogue<DialogueKey extends string, NodeOption extends string, MatchRuleType extends string> {
-    constructor (id: DialogueKey, object: Dialogue.Object<NodeOption, MatchRuleType>, agentContext: Readonly<ConverseAgent.Context>, options?: Partial<Dialogue.Options>)
+    constructor (id: DialogueKey, object: Dialogue.Object<NodeOption, MatchRuleType>, agentContext: Agent.Context, options?: Partial<Dialogue.Options>)
     // DIALOGUE related operations
     // ------------------------------------
 
@@ -70,7 +72,7 @@ declare class ConverseDialogue<DialogueKey extends string, NodeOption extends st
     removeNodeAction(actionId: Node.ActionId)
 
     // matcher for initial dialogue
-    setMatcher<K, T>(matchRule: MatchRuleType, matcher: Dialogue.MatchFunction<K, T>): ConverseDialogue<DialogueKey, NodeOption, MatchRuleType>
+    setMatcher<K, T>(matchRule: MatchRuleType, matcher: Dialogue.MatchFunction<K, T, NodeOption>): ConverseDialogue<DialogueKey, NodeOption, MatchRuleType>
 
     /**
      * agent reponder

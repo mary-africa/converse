@@ -66,7 +66,7 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
         return this.dialogues[dialogueKey]
     }
 
-    beautifyState<T>(state?: Agent.State<T, Intent>): Agent.State<T, Intent> {
+    beautifyState<T extends string>(state?: Agent.State<T, Intent>): Agent.State<T, Intent> {
         if (state === null || state === undefined) {
             return {} as Agent.State<T, Intent>
         }
@@ -93,7 +93,9 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
             // output the fallback text where nothing is matched
             console.warn('Matching done. No matches found')
         } else {
-            const { response, dialogueKey = null } = this.intentions[matchedIntent]
+            console.log("matchedIntent:", matchedIntent)
+
+            const { response = undefined, dialogueKey = null } = this.intentions[matchedIntent]
             const { sequenceDialogue } = freshState
 
             // select item
