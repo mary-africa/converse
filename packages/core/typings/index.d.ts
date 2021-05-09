@@ -1,25 +1,66 @@
 import ConverseDialogue from './dialogue'
 
-declare class ConverseAgent<Intent extends string, DialogueKey extends string, DialogueMatchRuleType extends string> {
+declare class ConverseAgent<Intent extends string, DialogueKey extends string, DialogueMatchRuleType extends string, AgentExtendedConfig> {
     public static DIALOGUE_GOTO_SELF: Dialogue.GoTo.Self
+    protected mutators: { 
+        [mutatorId in Agent.MutationAtType]?: Agent.Mutator<any>
+    }
+
+    protected readonly config: Agent.Config<MatchRuleType, AgentExtendedConfig>;
+    protected readonly context: Agent.Context;
+
+    /**
+     * This stores the dialogue objects
+     */
+    protected dialogues: {
+        // FIXME: remove the 'any' type param
+        [nodes in DialogueKey]: BaseDialogue<DialogueKey, string, MatchRuleType>
+    }
+
+    protected readonly intentions: { [intent in Intent]: DDO.Item<DialogueKey, any> }
+    protected readonly fallbackText: string
+
+    /**
+     * This would contain the matcher Function needed
+     * to match the items in the intentions object 
+     */
+    protected matcher?: <T>(
+        input: T, 
+        matchMap: {
+            intent: Intent,
+            toMatch: DDO.Item<DialogueKey, T>['toMatch']
+        }[],
+        ...args: any | undefined) => null | Intent
 
     constructor (ddo: DialogueDefinition<Intent, DialogueKey, DialogueMatchRuleType>, config: Partial<Agent.Config<DialogueMatchRuleType>>, context: Agent.Context);
     setMutation<T>(at: Agent.MutationAtType, mutator: Agent.Mutator<T>);
     removeMutation(at: Agent.MutationAtType);
     dialogue<T>(dialogueKey: DialogueKey): ConverseDialogue<DialogueKey, T, DialogueMatchRuleType>
+    
     setMatcher<K>(
         matcher: (
             input: K, 
             matchMap: { [intent in Intent]: DialogueDefinition<Intent, DialogueKey, DialogueMatchRuleType>['intentions'][intent]['toMatch'] }, 
             _agent: Readonly<{ context: Agent.Context, config: Agent.Config<DialogueMatchRuleType> }>
-        ) => null | Intent
+        ) => Promise<null | Intent>
     )
 
     /**
      * Agent's logic for matching the input
      * // this would use the setMatcher to match the inputs
      */
-    match<K>(input: K);
+    protected match<K>(input: K);
+    protected getMatchItemList<T>(): Array<{ 
+        intent: Intent,
+        toMatch: DDO.Item<DialogueKey, T>['toMatch']
+    }>;
+    protected exactMatch<T>(
+        mutatedInput: T, 
+        matchList: { 
+            intent: Intent,
+            toMatch: DDO.Item<DialogueKey, T>['toMatch']
+        }[]
+    ): null | Intent;
 }
 
 export default ConverseAgent
@@ -44,7 +85,9 @@ export declare namespace Agent {
     type MutationAtType = 'preprocess' | 'postprocess'
     type Mutator<T> =  (input: string) => T
 
-    export interface Config<MatchRuleType extends string> {
+
+    export type Config<MatchRuleType extends string, AgentExtendedConfig> = BaseConfig<MatchRuleType> & AgentExtendedConfig 
+    interface BaseConfig<MatchRuleType extends string> {
         /**
          * Rules used in decision points
          */

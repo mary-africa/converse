@@ -5,48 +5,48 @@ import { Agent, DialogueDefinition, DDO } from '../typings'
 import { Dialogue } from '../typings/dialogue'
 
 
-export default class BaseAgent<Intent extends string, DialogueKey extends string, MatchRuleType extends string>{
+export default class BaseAgent<Intent extends string, DialogueKey extends string, MatchRuleType extends string, AgentExtendedConfig>{
     public static readonly DIALOGUE_GOTO_SELF: Dialogue.GoTo.Self = 0
-    private mutators: { 
+    protected mutators: { 
         [mutatorId in Agent.MutationAtType]?: Agent.Mutator<any>
     } = {}
 
-    private readonly config: Agent.Config<MatchRuleType>;
-    private readonly context: Agent.Context;
+    protected readonly config: Agent.Config<MatchRuleType, AgentExtendedConfig>;
+    protected readonly context: Agent.Context;
 
     /**
      * This stores the dialogue objects
      */
-    private dialogues: {
+    protected dialogues: {
         // FIXME: remove the 'any' type param
         [nodes in DialogueKey]: BaseDialogue<DialogueKey, string, MatchRuleType>
     }
 
-    private readonly intentions: { [intent in Intent]: DDO.Item<DialogueKey, any>}
-    private readonly fallbackText: string
+    protected readonly intentions: { [intent in Intent]: DDO.Item<DialogueKey, any>}
+    protected readonly fallbackText: string
 
     /**
      * This would contain the matcher Function needed
      * to match the items in the intentions object 
      */
-    private matcher?: <T>(
+    protected matcher?: <T>(
         input: T, 
         matchMap: { 
             intent: Intent,
             toMatch: DDO.Item<DialogueKey, T>['toMatch']
         }[],
-        ...args: any | undefined) => null | Intent
+        ...args: any | undefined) => Promise<null | Intent>
 
     constructor (
         ddo: DialogueDefinition<Intent, DialogueKey, MatchRuleType>, 
-        config: Partial<Agent.Config<MatchRuleType>>, 
+        config: Partial<Agent.Config<MatchRuleType, AgentExtendedConfig>>, 
         context: Agent.Context
     ) {
         this.config = {
             // setting the default configurations
-            enableExactMatchRule: true, 
+            enableExactMatchRule: true,
             ...(config || {}) 
-        }
+        } as Agent.Config<MatchRuleType, AgentExtendedConfig>
 
         this.context = context
     
@@ -79,15 +79,15 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
         return mutate !== undefined ? mutate(input) : input
     }
 
-    chat <T extends string>(
+    async chat <T extends string>(
         message: string, 
         state?: Agent.State<T, Intent>
-    ): { output: string, state: Agent.State<T, Intent>} {
+    ): Promise<{ output: string, state: Agent.State<T, Intent>}> {
         const freshState = this.beautifyState(state)
         let mutatedInput = this.mutate('preprocess', message)
 
         // match the intent
-        const matchedIntent = this.match(mutatedInput) 
+        const matchedIntent = await this.match(mutatedInput) 
 
         if (matchedIntent === null) {
             // output the fallback text where nothing is matched
@@ -171,8 +171,8 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
                 intent: Intent,
                 toMatch: DDO.Item<DialogueKey, T>['toMatch']
             }[], 
-            _agent: Readonly<{ context: Agent.Context, config: Agent.Config<MatchRuleType> }>
-        ) => null | Intent
+            _agent: Readonly<{ context: Agent.Context, config: Agent.Config<MatchRuleType, AgentExtendedConfig> }>
+        ) => Promise<null | Intent>
     ) {
        if (this.matcher !== undefined)
             console.warn(`Replacing an existing matcher`)
@@ -180,7 +180,7 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
         this.matcher = matcher
     }
 
-    private getMatchItemList<T>(): Array<{ 
+    protected getMatchItemList<T>(): Array<{ 
         intent: Intent,
         toMatch: DDO.Item<DialogueKey, T>['toMatch']
     }> {
@@ -200,14 +200,14 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
      * Matching logic. This takes uses a matcher, to match the 
      * [mutated] input against the `toMatch` items in each intent
      */
-    private match<T>(mutatedInput: T) {
+    protected async match<T>(mutatedInput: T) {
 
         // Perform matching
         // --------------------------
 
         // check if there is a matcher
         if (this.matcher !== undefined) {
-            return this.matcher(mutatedInput, this.getMatchItemList())
+            return await this.matcher(mutatedInput, this.getMatchItemList())
         } else {
             // check if exact matching is enabled
             if (this.config.enableExactMatchRule) {
@@ -229,7 +229,7 @@ This will default to returning 'null'`)
      * 
      * @type T mutated type
      */
-    private exactMatch<T>(
+    protected exactMatch<T>(
         mutatedInput: T, 
         matchList: { 
             intent: Intent,

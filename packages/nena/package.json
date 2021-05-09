@@ -33,7 +33,6 @@
     "js-levenshtein": "^1.1.6"
   },
   "devDependencies": {
-    "@types/axios": "^0.14.0",
     "@types/express": "^4.17.11",
     "@types/jest": "^26.0.23",
     "@types/node": "^14.14.37",

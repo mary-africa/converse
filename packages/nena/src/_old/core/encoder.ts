@@ -17,7 +17,7 @@ export async function encode<IntentType extends string>(
         url: `${baseNenaApi}/api/tasks/intents/knn`,
         data: JSON.stringify({
             apiKey,
-            payload: {
+            payload: {  
                 text: message,
                 intentions,
                 intent_texts: intentions.map(x => intentData[x])

@@ -1,4 +1,5 @@
-import BaseAgent, { Agent, DialogueDefinition } from '../../core'
+import { IncomingHttpHeaders } from 'node:http'
+import BaseAgent, { Agent, DialogueDefinition as BaseDialogueDefinition } from '../../core'
 import ConverseDialogue from '../../core/typings/dialogue'
 
 class NenaConverseAgent<Intent extends string, DialogueKey extends string, DialogueMatchRuleType extends string> extends BaseAgent<Intent, DialogueKey, DialogueMatchRuleType> {
@@ -11,38 +12,43 @@ class NenaConverseAgent<Intent extends string, DialogueKey extends string, Dialo
     setMutation<T>(at: Agent.MutationAtType, mutator: Agent.Mutator<T>);
     removeMutation(at: Agent.MutationAtType);
     dialogue<T>(dialogueKey: DialogueKey): ConverseDialogue<DialogueKey, T, DialogueMatchRuleType>
-
-    /**
-     * [PRIVATE] this performs the intent matching
-     */    
-    intentMatch<K>(
-        input: K, 
-        matchMap: { 
-            [intent in Intent]: NenaDialogueDefinition<Intent, DialogueKey, DialogueMatchRuleType>['intentions'][intent]['toMatch'] 
-        }
-    )
-
-    /**
-     * Agent's logic for matching the input
-     * // this would use the setMatcher to match the inputs
-     */
-    match<K>(input: K);
+    setApiFetcher (fetcher: Nena.Fetcher<Intent>)
 }
 
 export default NenaConverseAgent
 
-declare namespace Nena {
+export declare namespace Nena {
     interface ConfigBase {
         apiKey: string
-        baseApiUrl: string
+        baseApiUrl: string,
     }
+
+    type Fetcher<Intent extends string> = (
+        url: string, 
+        data: {
+            apiKey: string,
+            payload: {
+                text: string
+                intentions: Intent[],
+                intent_texts: string[][]
+            }
+        },
+        header: IncomingHttpHeaders
+    ) => Promise<{
+        output: { 
+            results: number | null, 
+            info: {
+                intents: string[]
+            } 
+        }
+    }>
 }
 
-export declare interface NenaDialogueDefinition<
+export declare interface DialogueDefinition<
     IntentType extends string,
     DialogueKey extends DDO.DialogueKeyType,
     MatchRuleType extends string
-> extends DialogueDefinition<IntentType, DialogueKey, MatchRuleType> {
+> extends BaseDialogueDefinition<IntentType, DialogueKey, MatchRuleType> {
     /**
      * Rules for matching with
      */
