@@ -29,5 +29,5 @@
     "node_modules", "lib", "__tests__"
   ],
   "include": [
-    "./src", "typings/**/*", "typings/index.d.ts", "dialogue.d.ts"  ]
+    "./src", "typings/**/*" ]
 }
