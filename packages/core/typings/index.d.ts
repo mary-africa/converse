@@ -1,23 +1,17 @@
-// import DDO, { DDO as NsDDO } from './ddo'
-// import Dialogue, { Dialogue as NsDialogue } from './dialogue'
+// import ConverseDialogue from './dialogue'
 
-// export as namespace "converse-core";
+declare class ConverseAgent<Intent extends string, DialogueKey extends string, DialogueMatchRuleType extends string> {
+    public static DIALOGUE_GOTO_SELF: Dialogue.GoTo.Self
 
-declare class Agent<Intent extends string, DialogueKey extends string, DialogueMatchRuleType extends string> {
-    public static DIALOGUE_GOTO_SELF: NsDialogue.GoTo.Self
-
-    constructor (ddo: DDO<Intent, DialogueKey, AgentRuleType>, config: Partial<ConverseAgent.Config<DialogueMatchRuleType>>, context: ConverseAgent.Context);
-    setMutation<T>(at: ConverseAgent.MutationAtType, mutator: ConverseAgent.Mutator<T>);
-    removeMutation(at: ConverseAgent.MutationAtType);
-    dialogue<T>(dialogueKey: DialogueKey): Dialogue<T, DialogueMatchRuleType>/* NsDialogue.Object<T, MatchRuleType> */
-
-    // matcher for initial dialogue
-    // TODO: maybe remove this?
+    constructor (ddo: DialogueDefinition<Intent, DialogueKey, DialogueMatchRuleType>, config: Partial<Agent.Config<DialogueMatchRuleType>>, context: Agent.Context);
+    setMutation<T>(at: Agent.MutationAtType, mutator: Agent.Mutator<T>);
+    removeMutation(at: Agent.MutationAtType);
+    dialogue<T>(dialogueKey: DialogueKey): ConverseDialogue<T, DialogueMatchRuleType>
     setMatcher<K>(
         matcher: (
             input: K, 
-            matchMap: { [intent in Intent]: DDO<Intent, Dialogue>['intentions'][intent]['toMatch'] }, 
-            _agent: Readonly<{ context: ConverseAgent.Context, config: ConverseAgent.Config<DialogueMatchRuleType> }>
+            matchMap: { [intent in Intent]: DialogueDefinition<Intent, DialogueKey, DialogueMatchRuleType>['intentions'][intent]['toMatch'] }, 
+            _agent: Readonly<{ context: Agent.Context, config: Agent.Config<DialogueMatchRuleType> }>
         ) => null | Intent
     )
 
@@ -28,27 +22,21 @@ declare class Agent<Intent extends string, DialogueKey extends string, DialogueM
     match<K>(input: K);
 }
 
-export default Agent
+export default ConverseAgent
 
-declare namespace ConverseAgent {
+export declare namespace Agent {
     export interface DialogueMarker<Node extends string> {
         index: number,
         node?: Node,
     }
-
     interface State<Node, Intent> {
         intent?: Intent | null
-    
-        /**
-         * Identifies staticly defined sequence
-         */
-        prevSequenceDialogue?: null | DialogueMarker<Node>
-    
+
         /**
          * included `string` to account for dynamic matching of the sequences.
          * This would include using something like seq-${number}-var
          */
-        sequenceDialogue?: null | DialogueMarker<Node | string>
+        sequenceDialogue?: null | DialogueMarker<Node>
     }
     
     // actions responsible in modifying the data shape
@@ -82,3 +70,61 @@ declare namespace ConverseAgent {
         }
     }
 }
+
+
+type MultValType<T> = T 
+
+/**
+ * Main definition of the dialogue
+ */
+export declare interface DialogueDefinition<
+    IntentType extends string,
+    DialogueKey extends DDO.DialogueKeyType,
+    MatchRuleType extends string
+> {
+    /**
+     * Dialogues
+     */
+    dialogues: { [key in DialogueKey]: Dialogue.Object<string, MatchRuleType> }
+    
+    /**
+     * Intentions
+     */
+    intentions: { [intent in IntentType]: DDO.Item<DialogueKey, any> }
+
+    /**
+     * Response Text for when there are no intentions matched
+     */
+    fallbackText: string
+}
+
+export declare namespace DDO {
+    /**
+     * Item description for the DDO
+     */
+    interface Item<DialogueKey extends string | number, T> {
+        /**
+         * This is skipped when there is dialogue
+         */
+        response: string
+    
+        /**
+         * string(s) to match the intention
+         */
+        toMatch: T[]
+    
+        /**
+         * Dialogue keys from the dialogue object
+         */
+        dialogueKey: MultValType<DialogueKey>
+    }
+
+    /**
+     * Expected Key type
+     */
+    type DialogueKeyType = string | number
+    
+    type ItemResponse<DialogueKey extends DialogueKeyType, T> = Omit<Item<DialogueKey, T>, "dialogueKey">
+    type ItemDKey<DialogueKey extends DialogueKeyType, T> = Omit<Item<DialogueKey, T>, "response">
+}
+

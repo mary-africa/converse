@@ -1,8 +1,12 @@
+import BaseDialogue from './dialogue'
 import { stateUpdate } from './utils'
+
+import { Agent, DialogueDefinition, DDO } from '../typings'
+import { Dialogue } from '../typings/dialogue'
+
 
 export default class BaseAgent<Intent extends string, DialogueKey extends string, MatchRuleType extends string>{
     public static readonly DIALOGUE_GOTO_SELF: Dialogue.GoTo.Self = 0
-
     private mutators: { 
         [mutatorId in Agent.MutationAtType]?: Agent.Mutator<any>
     } = {}
@@ -18,7 +22,7 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
         [nodes in DialogueKey]: BaseDialogue<DialogueKey, string, MatchRuleType>
     }
 
-    private readonly intentions: { [intent in Intent]: DDO.ItemResponse<DialogueKey> | DDO.ItemDKey<DialogueKey> }
+    private readonly intentions: { [intent in Intent]: DDO.Item<DialogueKey, any>}
     private readonly fallbackText: string
 
     /**
@@ -111,10 +115,10 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
                     const { node: _node = null } = sequenceDialogue
                     
                     // chat in the dialogue
-                    const dialogue = this.dialogue(dialogueKey)
+                    const dialogue = this.dialogue(selectedDialogue)
                     
                     // get dialogue
-                    const { output, node } = dialogue.respond<any, any>(
+                    const { output, node } = dialogue.respond<any>(
                         mutatedInput, 
                         // @ts-ignore
                         _node
@@ -125,7 +129,12 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
                         state: stateUpdate(freshState, { 
                             intent: matchedIntent, 
                             // pointes to the next node
-                            nextSequenceDialogue: { index: selectedDialogue, node } 
+                            nextSequenceDialogue: { 
+                                // sending option 0 under the assumption that
+                                // the dialogue traversed is the same
+                                index: 0, 
+                                node 
+                            } 
                         }) 
                     }
                 }

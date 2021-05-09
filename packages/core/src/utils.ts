@@ -1,6 +1,8 @@
 import produce from 'immer'
 import { Draft } from 'immer/dist/internal'
 
+import { Agent } from '../typings/index'
+
 export function stateUpdate<Node extends string, Intent extends string>(
     old: Agent.State<Node, Intent>,
     data: {

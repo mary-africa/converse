@@ -3,8 +3,8 @@
   "name": "converse-core",
   "version": "0.2.1",
   "description": "Building conversational agents - one step at a time",
-  "main": "dist/index.js",
-  "types": "./typings",
+  "main": "lib/index.js",
+  "typings": "./typings",
   "scripts": {
     "tsc": "npx tsc -p .",
     "build": "yarn run tsc",

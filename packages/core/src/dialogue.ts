@@ -1,3 +1,7 @@
+import { Node, Dialogue } from '../typings/dialogue'
+import { Agent } from '../typings/index'
+
+
 const dynNodeRegex = new RegExp(/[\w-_]*\$[\w-_]*/g)
 const replaceRegex = new RegExp(/\$/g)
 
@@ -10,7 +14,7 @@ export class BaseNode<Option extends string, MatchRuleType extends string> {
      * when entering a node / dialog
      */
     private actionIds: {
-        [actionType in Node.ActionType]?: string
+        [actionType in Node.ActionType]?:    string
     } = {}
     
     private mutatorIds: {
@@ -61,12 +65,11 @@ export class BaseNode<Option extends string, MatchRuleType extends string> {
      * @param $ 
      * @returns the next dialogue to visit
      */
-    next($?: string): Option | null | Dialogue.GoTo.Self {
+    next($?: string | null): Option | null | Dialogue.GoTo.Self {
         const { goTo = null } = this.object
 
-        if ($ === undefined) {
-            return goTo as Option | null
-        }
+        if ($ === null) { return null }
+        if ($ === undefined) { return goTo as Option | null }
         
         if (goTo === null || goTo === undefined) return null
         if (goTo === BaseNode.GOTO_SELF) return BaseNode.GOTO_SELF
@@ -89,7 +92,7 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
     private readonly ac: Agent.Context
     private self: Dialogue.Object<NodeOption, MatchRuleType>
 
-    private matchers: { [matcher in MatchRuleType]?: Dialogue.MatchFunction<any, any> } = {}
+    private matchers: { [matcher in MatchRuleType]?: Dialogue.MatchFunction<any, any, NodeOption> } = {}
 
     private mutators: { [mutatorId in Dialogue.MutationType]?: Dialogue.Mutator<unknown> } = {}
     private actions: { [action in Dialogue.ActionType]?: Dialogue.Action } = {}
@@ -200,7 +203,7 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
                 throw Error(`Node has matcher ('${_node.matcher}'), but matcher function is not create in dialogue`)
             }
 
-            const _out: NodeOption | string | Dialogue.GoTo = dialogMatcher(_message, this.options, this.ac)
+            const _out: NodeOption | string | Dialogue.GoTo | null = dialogMatcher(_message, this.options, this.ac)
 
             if (_out === BaseNode.GOTO_SELF) {
                 // get node
@@ -209,6 +212,7 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
             }
 
             goToNode = _node.next(_out)
+
         } else {
             goToNode = _node.next()
         }
@@ -264,7 +268,7 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
      */
     setMatcher<K, T>(
         matchRule: MatchRuleType, 
-        matcher: Dialogue.MatchFunction<K, T>
+        matcher: Dialogue.MatchFunction<K, T, NodeOption>
     ): BaseDialogue<DialogueKey, NodeOption, MatchRuleType> {
         // add a matching rule
         if (this.verbose) {
