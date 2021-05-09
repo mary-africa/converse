@@ -98,6 +98,11 @@ From the `ddo` shown above, here is an example of an action that is executed whe
   yarn add converse-core converse-nena
   ```
 
+#### Compatibility Table:
+
+| converse-core | converse-nena |
+| ---------- | ---------------|
+| 0.3.0 | 0.2.1
 ### Contributions
 
 Contributions currently can only be made by the members of [Mary.Africa](https://mary.africa).
