@@ -117,12 +117,19 @@ describe("Testing base components for nena", () => {
             expect(data.apiKey).toBe(apiKey)
 
             // matching intentions list
-            expect(data.payload.intentions).toContain(["greet", "tutorial", "assessment"])
+            expect(data.payload.intentions).toEqual(["greet", "tutorial", "assessment"])
 
-            return { output: { info: data.payload.intentions, results: 0 }}
+            return { 
+                output: { 
+                    info: {
+                        intents: data.payload.intentions
+                    }, 
+                    results: 0 
+                }
+            }
         })
 
-        expect(await agent.chat("asaadadasd")).toBe({
+        expect(await agent.chat("asaadadasd")).toStrictEqual({
             output: 'Habari zako kijani!',
             state: { intent: 'greet' }
         })

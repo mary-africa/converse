@@ -70,7 +70,7 @@ class ConverseNenaAgent<Intent extends string, DialogueKey extends string, Dialo
     protected match<T>(mutatedInput: T) {
         // check if there is a matcher
         if (this.matcher !== undefined) {
-            return this.matcher(mutatedInput, this.getMatchItemList(), this.context)
+            return this.matcher(mutatedInput, this.getMatchItemList(), { config: this.config, context: this.context } )
         } else {
             // check if exact matching is enabled
             if (this.config.enableExactMatchRule) {
