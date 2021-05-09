@@ -19,7 +19,7 @@ From purely-rule based to full-fledged NLP enhanced
   yarn add converse-core
   ```
 
-- **Converse Nena** - [`@converse-core`](packages/nena)
+- **Converse Nena** - [`converse-nena`](packages/nena)
   This is the agent that makes use of Nena to give the agent NLP functionalities
 
   To install (_future_):
