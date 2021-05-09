@@ -128,11 +128,11 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
         return mutate !== undefined ? mutate(input) : input
     }
 
-    performAction(on: Dialogue.ActionType) {
+    async performAction(on: Dialogue.ActionType) {
         const action = this.actions[on]
 
         if (action !== undefined)
-            action().finally(() => console.log("Completed execution"))
+            await action()
     }
 
     nodeMutate<DialogueMutateType>(nodeMutationId: Node.MutatorId['key'], input: DialogueMutateType) {

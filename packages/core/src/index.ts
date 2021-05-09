@@ -94,7 +94,7 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
             console.warn('Matching done. No matches found')
         } else {
             const { response = undefined, dialogueKey = null } = this.intentions[matchedIntent]
-            const { sequenceDialogue } = freshState
+            const { sequenceDialogue = null } = freshState
 
             // select item
             let selectedDialogue = dialogueKey
@@ -111,34 +111,34 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
                     selectedDialogue = dialogueKey[index]
                 }
                 
-                if (selectedDialogue !== null) {                
-                    const { node: _node = null } = sequenceDialogue
-                    
-                    // chat in the dialogue
-                    const dialogue = this.dialogue(selectedDialogue)
-                    
-                    // get dialogue
-                    const { output, node } = dialogue.respond<any>(
-                        mutatedInput, 
-                        // @ts-ignore
-                        _node
-                    )
-                    
-                    return {
-                        output, 
-                        state: stateUpdate(freshState, { 
-                            intent: matchedIntent, 
-                            // pointes to the next node
-                            nextSequenceDialogue: { 
-                                // sending option 0 under the assumption that
-                                // the dialogue traversed is the same
-                                index: 0, 
-                                node 
-                            } 
-                        }) 
-                    }
+            }
+
+            if (selectedDialogue !== null) {       
+                
+                // chat in the dialogue
+                const dialogue = this.dialogue(selectedDialogue)
+                
+                // get dialogue
+                const { output, node } = dialogue.respond<any>(
+                    mutatedInput, 
+                    // @ts-ignore
+                    sequenceDialogue?.node || null
+                )
+                
+                return {
+                    output, 
+                    state: stateUpdate(freshState, { 
+                        intent: matchedIntent, 
+                        // pointes to the next node
+                        nextSequenceDialogue: { 
+                            // sending option 0 under the assumption that
+                            // the dialogue traversed is the same
+                            index: 0, 
+                            node 
+                        } 
+                    }) 
                 }
-            } 
+            }
             
             // Making the response
             // there is a matchedIntent

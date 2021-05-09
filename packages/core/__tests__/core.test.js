@@ -107,12 +107,14 @@ agent.dialogue('assessmentDiag')
     .setAction('enter', async () => {
         // Doing some actions
         // when entering the dialogue
+        console.log("DOING THE ACTION")
     })
     
 agent.dialogue('assessmentDiag')
     .setNodeAction('a04', 'exit', async (context) => {
         // something
         // mark something as completed
+        console.log("LEAVING LAST NODE")
     })
 
 
@@ -122,5 +124,17 @@ agent.dialogue('assessmentDiag')
 test('Trying "habari" on a bot', async () => {
     // actually using the bot
     expect(await agent.chat("habari", {}))
-        .toStrictEqual({"output": "Habari zako kijani!", "state": { intent: "greet" }})
+        .toStrictEqual({ 
+            output: "Habari zako kijani!",
+            state: { intent: "greet" }
+        })
+});
+
+test('Trying accessing `assessmentDiag` using -> swali', async () => {
+    // actually using the bot
+    expect(await agent.chat("swali", {}))
+        .toStrictEqual({
+            output: 'text from a01',
+            state: { intent: 'assessment', sequenceDialogue: { index: 0, node: 'a01' } }
+        })
 });
