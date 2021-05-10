@@ -43,6 +43,11 @@ export declare namespace Nena {
             } 
         }
     }>
+
+    type IntentMatchRule = 'exact' | 'nlp'
+    interface DDOItem<DialogueKey extends string, T> extends DDO.Item<DialogueKey, T> {
+        matchRule?: IntentMatchRule // default 'nlp'
+    }
 }
 
 export declare interface DialogueDefinition<
@@ -53,5 +58,6 @@ export declare interface DialogueDefinition<
     /**
      * Rules for matching with
      */
-    // matchRule: 'exact' | 'swahili-intent' | 'custom'
+    intentions: { [intent in IntentType]: DDO.Item<DialogueKey, any> }
+    
 }

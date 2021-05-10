@@ -49,7 +49,7 @@ declare class ConverseDialogue<DialogueKey extends string, NodeOption extends st
     /**
      * Action that should execute when and action is triggered
      */
-    setAction(on: Dialogue.ActionType, action: Dialogue.Action): ConverseDialogue<DialogueKey, NodeOption, MatchRuleType>;
+    setAction<T>(on: Dialogue.ActionType, action: Dialogue.Action<NodeOption, T>): ConverseDialogue<DialogueKey, NodeOption, MatchRuleType>;
 
     /**
      * Removes an action
@@ -68,20 +68,24 @@ declare class ConverseDialogue<DialogueKey extends string, NodeOption extends st
     /**
      * Actions
      */
-    setNodeAction(node: NodeOption, on: Node.ActionType, action: Node.Action<NodeOption>): string;
+    setNodeAction<T>(node: NodeOption, on: Node.ActionType, action: Node.Action<NodeOption, T>): string;
     removeNodeAction(actionId: Node.ActionId)
 
     // matcher for initial dialogue
-    setMatcher<K, T>(matchRule: MatchRuleType, matcher: Dialogue.MatchFunction<K, T, NodeOption>): ConverseDialogue<DialogueKey, NodeOption, MatchRuleType>
+    setMatcher<K, T, MatchCallback extends Function>(
+        matchRule: MatchRuleType, 
+        matcher: Dialogue.MatchFunction<K, T, NodeOption, MatchCallback>
+    ): ConverseDialogue<DialogueKey, NodeOption, MatchRuleType>
 
     /**
      * agent reponder
      * @param message 
      * @param state 
      */
-    respond<AgentMutatedType>(
+    respond<AgentMutatedType, AT, MatchCallback extends Function>(
         message: AgentMutatedType, 
-        node: NodeOption | null
+        node: NodeOption | null = null,
+        use?: {actionData?: AT, matchCallback?: MatchCallback}
     ): {
         output: string, 
         node: NodeOption | string | null | number
@@ -93,7 +97,7 @@ export default ConverseDialogue
 export declare namespace Node {
     export type ActionId = { on: ActionType, key: string }
     export type ActionType = 'enter' | 'exit'
-    export type Action <NodeOption extends string> = (dialogueContext: Dialogue.Context<NodeOption>) => Promise<void>
+    export type Action <NodeOption extends string, T> = (dialogueContext: Dialogue.Context<NodeOption>, actionData: T) => Promise<void>
 
     export type MutatorId = { at: MutationType, key: string }
     export type MutationType = 'preprocess' // | 'postprocess'
@@ -106,9 +110,9 @@ export declare namespace Node {
  * [namespace] Dialogue
  */
 export declare namespace Dialogue {
-    export type MatchFunction<K, T, NodeOption> = (input: K, options: T, context: Agent.Context) => null | string | Dialogue.GoTo | NodeOption
+    export type MatchFunction<K, T, NodeOption, MatchCallback extends Function> = (input: K, options: T, context: Agent.Context, matchCallback?: MatchCallback) => null | string | Dialogue.GoTo | NodeOption | void
     export type ActionType = 'enter' | 'exit'
-    export type Action = () => Promise<void>
+    export type Action<NodeOption, T> = (dialogueContext: Dialogue.Context<NodeOption>, actionData: T) => Promise<void>
 
     // actions responsible in modifying the data shape
     export type MutationType = 'preprocess' // | 'postprocess'

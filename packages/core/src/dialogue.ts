@@ -65,14 +65,13 @@ export class BaseNode<Option extends string, MatchRuleType extends string> {
      * @param $ 
      * @returns the next dialogue to visit
      */
-    next($?: string | null): Option | null | Dialogue.GoTo.Self {
+    next($?: string | null): Option | null {
         const { goTo = null } = this.object
 
         if ($ === null) { return null }
         if ($ === undefined) { return goTo as Option | null }
         
         if (goTo === null || goTo === undefined) return null
-        if (goTo === BaseNode.GOTO_SELF) return BaseNode.GOTO_SELF
 
         // Convert dynamic to static node
         const out = dynNodeRegex.exec(goTo as string)
@@ -92,13 +91,13 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
     private readonly ac: Agent.Context
     private self: Dialogue.Object<NodeOption, MatchRuleType>
 
-    private matchers: { [matcher in MatchRuleType]?: Dialogue.MatchFunction<any, any, NodeOption> } = {}
+    private matchers: { [matcher in MatchRuleType]?: Dialogue.MatchFunction<any, any, NodeOption, any> } = {}
 
     private mutators: { [mutatorId in Dialogue.MutationType]?: Dialogue.Mutator<unknown> } = {}
-    private actions: { [action in Dialogue.ActionType]?: Dialogue.Action } = {}
+    private actions: { [action in Dialogue.ActionType]?: Dialogue.Action<NodeOption, any> } = {}
 
     private nodeMutationIds: { [mutatorId in Node.MutatorId['key']]?: Node.Mutator<unknown> } = {}
-    private nodeActionIds: { [actionId in Node.ActionId['key']]?: Node.Action<NodeOption> } = {}
+    private nodeActionIds: { [actionId in Node.ActionId['key']]?: Node.Action<NodeOption, any> } = {}
 
     private nodes: {
         // FIXME: remove the 'any' type param
@@ -128,11 +127,11 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
         return mutate !== undefined ? mutate(input) : input
     }
 
-    async performAction(on: Dialogue.ActionType) {
+    async performAction<T>(on: Dialogue.ActionType, actionData?: T) {
         const action = this.actions[on]
 
         if (action !== undefined)
-            await action()
+            await action(this.dialogueContext, actionData)
     }
 
     nodeMutate<DialogueMutateType>(nodeMutationId: Node.MutatorId['key'], input: DialogueMutateType) {
@@ -140,28 +139,36 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
         return nodeMutate !== undefined ? nodeMutate(input) : input
     }
 
-    async nodeAct(nodeActionId: Node.ActionId['key']) {
-        const nodeFn = this.nodeActionIds[nodeActionId]
-        if (nodeFn !== undefined) {
-            await nodeFn({
-                inputs: this.nodeInputs,
-                agentContext: this.ac
-            })
+    get dialogueContext () {
+        return {
+            inputs: this.nodeInputs,
+            agentContext: this.ac
         }
     }
 
-    respond<AgentMutatedType>(
+    async nodeAct<T>(nodeActionId: Node.ActionId['key'], actionData?: T) {
+        const nodeFn = this.nodeActionIds[nodeActionId]
+        if (nodeFn !== undefined) {
+            await nodeFn(this.dialogueContext, actionData)
+        }
+    }
+
+    respond<AgentMutatedType, AT, MatchCallback extends Function>(
         message: AgentMutatedType, 
-        node: NodeOption | null = null
-    ): { output: string, node: NodeOption | string | null | number } {
+        node: NodeOption | null = null,
+        use?: {actionData?: AT, matchCallback?: MatchCallback}
+    ): null | { output: string, node: NodeOption } {
         const nodeId = node === null ? this.self.start : node
         let _message: any = message
+
+        // Initiating the actionData and matchCallback
+        const { actionData = undefined, matchCallback = undefined } = use || {}
 
         /**
          * ENTER DIALOGUE
          */
         // DIALOGUE ENTER-ACTION: check if the node marked is the first one
-        if (node === null) this.performAction('enter');
+        if (node === null) this.performAction('enter', actionData);
 
         // DIALOGUE PREPROCESS: Mutate before anyother thing
         _message = this.mutate('preprocess', _message)
@@ -176,7 +183,7 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
             // NODE ENTER-ACTION
             const nodeEnterActionId = _node.actionId('enter')
             if (nodeEnterActionId !== undefined) 
-                this.nodeAct(nodeEnterActionId)
+                this.nodeAct(nodeEnterActionId, actionData)
 
             return { 
                 output: _node.text,
@@ -193,7 +200,7 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
 
 
         // get the goTo logic
-        let goToNode: NodeOption | null | Dialogue.GoTo.Self = null
+        let goToNode: NodeOption | null = null
 
         if (_node.matcher !== null) {
             // Using matcher to make a decision on the input
@@ -203,15 +210,14 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
                 throw Error(`Node has matcher ('${_node.matcher}'), but matcher function is not create in dialogue`)
             }
 
-            const _out: NodeOption | string | Dialogue.GoTo | null = dialogMatcher(_message, this.options, this.ac)
+            const _out: NodeOption | string | Dialogue.GoTo | null | void = dialogMatcher(_message, this.options, this.ac, matchCallback)
 
-            if (_out === BaseNode.GOTO_SELF) {
-                // get node
-                console.warn("Pointing to self")
-                throw new Error("HERE!!!")
+            if (_out !== BaseNode.GOTO_SELF) {
+                goToNode = _node.next(_out === void 0 ? undefined : _out)
+            } else {
+                goToNode = node
             }
 
-            goToNode = _node.next(_out)
 
         } else {
             goToNode = _node.next()
@@ -242,33 +248,28 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
         // NODE EXIT-ACTION
         const nodeExitActionId = _node.actionId('exit')
         if (nodeExitActionId !== undefined) 
-            this.nodeAct(nodeExitActionId)
+            this.nodeAct(nodeExitActionId, actionData)
 
         // // DIALOGUE POSTPROCESS: Mutate as you are leaving the dialogue
         // _message = this.mutate('postprocess', _message)
 
-        /**
-         * LEAVING DIALOGUE
-         */
 
-        // DIALOGUE EXIT-ACTION: if the node is the last node... then exit
-        if (goToNode === null) this.performAction('exit');
+        return goToNode !== null ? 
+            ({
+                // output of the next message
+                output: this.getNode(goToNode).text,
 
-        return {
-            // output of the next message
-            output: _node.text,
-
-            // the new node to work on
-            node: goToNode
-        }
+                // the new node to work on
+                node: goToNode
+            }) : null
     }
 
     /**
      * Adding a matcher function bound by a matcher rule
      */
-    setMatcher<K, T>(
+    setMatcher<K, T, MatchCallback extends Function>(
         matchRule: MatchRuleType, 
-        matcher: Dialogue.MatchFunction<K, T, NodeOption>
+        matcher: Dialogue.MatchFunction<K, T, NodeOption, MatchCallback>
     ): BaseDialogue<DialogueKey, NodeOption, MatchRuleType> {
         // add a matching rule
         if (this.verbose) {
@@ -310,19 +311,22 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
                 console.warn(`Replacing the existing dialogue mutation on '${at}'`)
         }
         this.mutators[at] = mutator
+        return this
+        
     }
 
     removeMutation(at: Dialogue.MutationType) {
         this.mutators[at] = undefined
     }
 
-    setAction(on: Dialogue.ActionType, action: Dialogue.Action) {
+    setAction<T>(on: Dialogue.ActionType, action: Dialogue.Action<NodeOption, T>) {
         if (this.verbose) {
             if (this.actions[on] !== undefined)
                 console.warn(`Replacing the existing dialogue action on '${on}'`)
         }
 
         this.actions[on] = action
+        return this
     }
 
     removeAction(on: Dialogue.ActionType) {
@@ -360,7 +364,7 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
         this.nodeMutationIds[mutatorId.key] = undefined
     }
 
-    setNodeAction(node: NodeOption, on: Node.ActionType, action: Node.Action<NodeOption>): Node.ActionId {
+    setNodeAction<T>(node: NodeOption, on: Node.ActionType, action: Node.Action<NodeOption, T>): Node.ActionId {
         const nodeActionId = BaseDialogue.createNodeActionId(on)
         const { key } = nodeActionId
 

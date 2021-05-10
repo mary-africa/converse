@@ -40,15 +40,16 @@ declare class ConverseAgent<Intent extends string, DialogueKey extends string, D
     setMatcher<K>(
         matcher: (
             input: K, 
-            matchMap: { [intent in Intent]: DialogueDefinition<Intent, DialogueKey, DialogueMatchRuleType>['intentions'][intent]['toMatch'] }, 
+            matchMap: Array<{ intent: Intent, toMatch: DialogueDefinition<Intent, DialogueKey, DialogueMatchRuleType>['intentions'][Intent]['toMatch']}>, 
             _agent: Readonly<{ context: Agent.Context, config: Agent.Config<DialogueMatchRuleType, AgentExtendedConfig> }>
         ) => Promise<null | Intent>
     )
     
-    chat <T extends string>(
+    chat <T extends string, AT, MatchCallback extends Function>(
         message: string, 
-        state?: Agent.State<T, Intent>
-    ): Promise<{ output: string, state: Agent.State<T, Intent>}>
+        state?: Agent.State<T, Intent>,
+        use?: {actionData?: AT, matchCallback?: MatchCallback}
+    ): Promise<{output: string, state: Agent.State<T, Intent>}>
 
     /**
      * Agent's logic for matching the input

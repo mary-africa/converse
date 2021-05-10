@@ -35,16 +35,25 @@ class ConverseNenaAgent<Intent extends string, DialogueKey extends string, Dialo
         // seting the matching rule for nena
         super.setMatcher(
             async (
-                input: { toString: () => string }, matchMap, _agent
+                input: { toString: () => string }, matchList, _agent
             ) => {
+            const intents_value: Intent[] = []
+            const intent_texts: string[][] = []
+            
+            matchList.filter((v: Nena.DDOItem<DialogueKey, any>) => v.matchRule === 'nlp').forEach((iitem => {
+                intents_value.push(iitem.intent)
+                let { toMatch } = iitem
+                intent_texts.push(!Array.isArray(toMatch) ? [toMatch]: toMatch )
+            }))
+
             const response = await fetcher(
                 `${_agent.config.baseApiUrl}/api/tasks/intents/knn`,
                 {
                     apiKey: _agent.config.apiKey,
                     payload: {
                         text: input.toString().trim().toLowerCase(),
-                        intentions: this.intents,
-                        intent_texts: this.intents.map(x => matchMap[x])
+                        intentions: intents_value,
+                        intent_texts
                     }
                 },
                 {
@@ -60,6 +69,29 @@ class ConverseNenaAgent<Intent extends string, DialogueKey extends string, Dialo
             
             return intents[intent_index] as Intent
         })
+    }
+
+    /**
+     * @override
+     */
+    getMatchItemList <T>(): Array<{ 
+        intent: Intent,
+        matchRule: Nena.IntentMatchRule,
+        toMatch: Nena.DDOItem<DialogueKey, T>['toMatch']
+    }> {
+        return Object.keys(this.intentions).map(
+            // TODO: fix this bug?
+            // @ts-ignore
+            (intent: Intent) => {
+                const out = this.intentions[intent] as Nena.DDOItem<DialogueKey, T> 
+
+                return ({ 
+                    intent, 
+                    matchRule: out['matchRule'] as Nena.IntentMatchRule || 'nlp', // default value
+                    toMatch: out['toMatch']
+                })
+            }
+        )
     }
 
     /**

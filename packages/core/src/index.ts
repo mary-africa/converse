@@ -79,10 +79,14 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
         return mutate !== undefined ? mutate(input) : input
     }
 
-    async chat <T extends string>(
+    async chat <T extends string, AT, MatchCallback extends Function>(
         message: string, 
-        state?: Agent.State<T, Intent>
-    ): Promise<{ output: string, state: Agent.State<T, Intent>}> {
+        state?: Agent.State<T, Intent>,
+
+        // TODO NEXT: make sure that the `use` operation has 
+        //  `action` and `callback` information, both of which have { data: D, callback: F }
+        use?: {actionData?: AT, matchCallback?: MatchCallback}
+    ): Promise<{output: string, state: Agent.State<T, Intent>}> {
         const freshState = this.beautifyState(state)
         let mutatedInput = this.mutate('preprocess', message)
 
@@ -118,26 +122,49 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
                 // chat in the dialogue
                 const dialogue = this.dialogue(selectedDialogue)
                 
-                // get dialogue
-                const { output, node } = dialogue.respond<any>(
-                    mutatedInput, 
-                    // @ts-ignore
-                    sequenceDialogue?.node || null
-                )
                 
-                return {
-                    output, 
-                    state: stateUpdate(freshState, { 
-                        intent: matchedIntent, 
-                        // pointes to the next node
-                        nextSequenceDialogue: { 
-                            // sending option 0 under the assumption that
-                            // the dialogue traversed is the same
-                            index: 0, 
-                            node 
-                        } 
-                    }) 
+                // get dialogue
+                const out = dialogue.respond<any, AT, MatchCallback>(
+                    mutatedInput,
+                    // @ts-ignore
+                    sequenceDialogue?.node || null,
+                    use
+                )
+
+                /**
+                 * LEAVING DIALOGUE
+                 */
+
+                // DIALOGUE EXIT-ACTION: if the node is the last node... then exit
+                // MOVE TO AGENT
+                if (out === null) {
+                    // TODO: navigate to the next item in sequence
+                    //  not currently supported
+                    await dialogue.performAction('exit', use?.actionData)
+
+                    // since the output for the node is the last node in the list..
+                    // Eject and process the text regularly
+                    return this.chat(message, {}, use)
                 }
+
+                const { output, node } = out
+                
+                if (output !== null) {
+                    return {
+                        output, 
+                        state: stateUpdate(freshState, { 
+                            intent: matchedIntent, 
+                            // pointes to the next node
+                            nextSequenceDialogue: { 
+                                // sending option 0 under the assumption that
+                                // the dialogue traversed is the same
+                                index: 0, 
+                                node 
+                            } 
+                        }) 
+                    }
+                }
+                
             }
             
             // Making the response
