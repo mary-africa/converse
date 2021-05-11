@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "converse-core",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Building conversational agents - one step at a time",
   "main": "lib/index.js",
   "typings": "./typings",
