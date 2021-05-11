@@ -1,6 +1,6 @@
 {
   "name": "converse-nena",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Building the converse agents with Nena",
   "main": "lib/index.js",
   "scripts": {
