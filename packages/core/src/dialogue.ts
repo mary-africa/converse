@@ -117,7 +117,9 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
         this.options = { id, verbose: true, ...(options) } 
 
         this.nodes = {} as {[node in NodeOption]: BaseNode<NodeOption, MatchRuleType>}
+        console.log("Building dialogue:", id)
         Object.keys(object).forEach((val) => {
+            console.log(" NODE >", val)
             this.nodes[val as NodeOption] = new BaseNode(object.nodes[val as NodeOption])
         })
 
@@ -228,7 +230,7 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
 
         if (goToNode !== null) {
             // check if the node exist
-            if (this.nodes[goToNode] === undefined) {
+            if (!(goToNode in this.nodes)) {
                 console.warn(`The node '${goToNode}' doesn't exit in this dialogue`)
                 console.warn('Resetting to NULL')
                 // reset to null
