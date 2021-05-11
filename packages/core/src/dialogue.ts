@@ -100,8 +100,7 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
     private nodeActionIds: { [actionId in Node.ActionId['key']]?: Node.Action<NodeOption, any> } = {}
 
     private nodes: {
-        // FIXME: remove the 'any' type param
-        [node in NodeOption]?: BaseNode<NodeOption, MatchRuleType>
+        [node in NodeOption]: BaseNode<NodeOption, MatchRuleType>
     }
 
     /**
@@ -116,8 +115,12 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
         this.self = object
     
         this.options = { id, verbose: true, ...(options) } 
-        // Build the nodes for the dialogue
-        this.nodes = {}
+
+        this.nodes = {} as {[node in NodeOption]: BaseNode<NodeOption, MatchRuleType>}
+        Object.keys(object).forEach((val) => {
+            this.nodes[val as NodeOption] = new BaseNode(object.nodes[val as NodeOption])
+        })
+
     }
 
     private get verbose(): boolean { return this.options.verbose }
@@ -225,16 +228,13 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
 
         if (goToNode !== null) {
             // check if the node exist
-            if (goToNode in this.nodes) {
+            if (this.nodes[goToNode] === undefined) {
                 console.warn(`The node '${goToNode}' doesn't exit in this dialogue`)
                 console.warn('Resetting to NULL')
                 // reset to null
                 goToNode = null
             }
-        }
-
-        console.log("GoTo node:", goToNode)
-        
+        }        
 
         /**
          * LEAVING NODE
