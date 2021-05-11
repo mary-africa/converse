@@ -79,6 +79,12 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
         return mutate !== undefined ? mutate(input) : input
     }
 
+    private normalizeIntentionData(matchedIntent: Intent) {
+        const { response = null, dialogueKey = null} = this.intentions[matchedIntent]
+
+        return { response, dialogueKey }
+    }
+
     async chat <T extends string, AT, MatchCallback extends Function>(
         message: string, 
         state?: Agent.State<T, Intent>,
@@ -90,92 +96,101 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
         const freshState = this.beautifyState(state)
         let mutatedInput = this.mutate('preprocess', message)
 
+        const { sequenceDialogue = null } = freshState
+        
         // match the intent
-        const matchedIntent = await this.match(mutatedInput) 
+        let matchedIntent = freshState.intent || null
+
+        if (sequenceDialogue === undefined || sequenceDialogue === null) {
+            matchedIntent = await this.match(mutatedInput) 
+        }
 
         if (matchedIntent === null) {
             // output the fallback text where nothing is matched
             console.warn('Matching done. No matches found')
         } else {
-            const { response = undefined, dialogueKey = null } = this.intentions[matchedIntent]
-            const { sequenceDialogue = null } = freshState
+            const { response, dialogueKey } = this.normalizeIntentionData(matchedIntent)
 
-            // select item
-            let selectedDialogue = dialogueKey
-            
-            // check if the dialogue is a list
-            if (sequenceDialogue !== null && sequenceDialogue !== undefined) {
-                if (Array.isArray(dialogueKey)) {
-                    let index = 0
-
-                    const { index: iDialogue } = sequenceDialogue
-                    index = iDialogue
-                    
-                    // choosing the dialogue
-                    selectedDialogue = dialogueKey[index]
-                }
+            if (dialogueKey !== null) {
+    
+                // select item
+                let selectedDialogue = dialogueKey
                 
-            }
-
-            if (selectedDialogue !== null) {       
-                
-                // chat in the dialogue
-                const dialogue = this.dialogue(selectedDialogue)
-                
-                
-                // get dialogue
-                const out = dialogue.respond<any, AT, MatchCallback>(
-                    mutatedInput,
-                    // @ts-ignore
-                    sequenceDialogue?.node || null,
-                    use
-                )
-
-                /**
-                 * LEAVING DIALOGUE
-                 */
-
-                // DIALOGUE EXIT-ACTION: if the node is the last node... then exit
-                // MOVE TO AGENT
-                if (out === null) {
-                    // TODO: navigate to the next item in sequence
-                    //  not currently supported
-                    await dialogue.performAction('exit', use?.actionData)
-
-                    // since the output for the node is the last node in the list..
-                    // Eject and process the text regularly
-                    return this.chat(message, {}, use)
-                }
-
-                const { output, node } = out
-                
-                if (output !== null) {
-                    return {
-                        output, 
-                        state: stateUpdate(freshState, { 
-                            intent: matchedIntent, 
-                            // pointes to the next node
-                            nextSequenceDialogue: { 
-                                // sending option 0 under the assumption that
-                                // the dialogue traversed is the same
-                                index: 0, 
-                                node 
-                            } 
-                        }) 
+                // check if the dialogue is a list
+                if (sequenceDialogue !== null && sequenceDialogue !== undefined) {
+                    if (Array.isArray(dialogueKey)) {
+                        let index = 0
+    
+                        const { index: iDialogue } = sequenceDialogue
+                        index = iDialogue
+                        
+                        // choosing the dialogue
+                        selectedDialogue = dialogueKey[index]
                     }
                 }
+    
+                if (selectedDialogue !== null) {                    
+                    // chat in the dialogue
+                    const dialogue = this.dialogue(selectedDialogue)
+                    
+                    console.log("dialogue :> ", sequenceDialogue)
+    
+                    // get dialogue
+                    const out = dialogue.respond<any, AT, MatchCallback>(
+                        mutatedInput,
+                        // @ts-ignore
+                        sequenceDialogue !== null ? sequenceDialogue.node: null,
+                        use
+                    )
+    
+                    /**
+                     * LEAVING DIALOGUE
+                     */
+    
+                    // DIALOGUE EXIT-ACTION: if the node is the last node... then exit
+                    // MOVE TO AGENT
+                    if (out === null) {
+                        // TODO: navigate to the next item in sequence
+                        //  not currently supported
+                        await dialogue.performAction('exit', use?.actionData)
+    
+                        // since the output for the node is the last node in the list..
+                        // Eject and process the text regularly
+                        return this.chat(message, {}, use)
+                    }
+    
+                    const { output, node } = out
+                    
+                    if (output !== null) {
+                        return {
+                            output, 
+                            state: stateUpdate(freshState, { 
+                                intent: matchedIntent, 
+                                // pointes to the next node
+                                nextSequenceDialogue: { 
+                                    // sending option 0 under the assumption that
+                                    // the dialogue traversed is the same
+                                    index: 0, 
+                                    node 
+                                } 
+                            }) 
+                        }
+                    }
+                    
+                }
                 
-            }
-            
-            // Making the response
-            // there is a matchedIntent
-            if (response !== undefined) {
-                return { output: response, state: { intent: matchedIntent } }
+
             } else {
-                console.warn(`Missing response text and dialogue for intent [${matchedIntent}]`)
-                console.warn("Defaulting to 'fallbackText'")
+                // Making the response
+                // there is a matchedIntent
+                if (response !== null) {
+                    return { output: response, state: { intent: matchedIntent } }
+                }
             }
         }
+
+        console.warn(`Missing response text and dialogue for intent [${matchedIntent}]`)
+        console.warn("Defaulting to 'fallbackText'")
 
         // output fallback text
         return { output: this.fallbackText, state: {} }
@@ -234,15 +249,17 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
 
         // check if there is a matcher
         if (this.matcher !== undefined) {
-            return await this.matcher(mutatedInput, this.getMatchItemList(), this.context)
-        } else {
-            // check if exact matching is enabled
-            if (this.config.enableExactMatchRule) {
-                return this.exactMatch(mutatedInput, this.getMatchItemList())
-            } else {
-                console.warn(`Agent is missing a matcher Function, and configuration for agent has 'enableExactMatchRule=false'.
-This will default to returning 'null'`)
+            const matchedIntent = await this.matcher(mutatedInput, this.getMatchItemList(), this.context)
+            if (matchedIntent !== null) {
+                return matchedIntent
             }
+        } 
+        
+        // check if exact matching is enabled
+        if (this.config.enableExactMatchRule) {
+            return this.exactMatch(mutatedInput, this.getMatchItemList())
+        } else {
+            console.warn(`Agent is missing a matcher Function, and configuration for agent has 'enableExactMatchRule=false'. This will default to returning 'nul'`)
         }
 
         // Null means there is not intent that is 

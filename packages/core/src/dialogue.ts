@@ -5,10 +5,10 @@ import { Agent } from '../typings/index'
 const dynNodeRegex = new RegExp(/[\w-_]*\$[\w-_]*/g)
 const replaceRegex = new RegExp(/\$/g)
 
+export const NODE_GOTO_SELF: Dialogue.GoTo.Self = 0
+
 export class BaseNode<Option extends string, MatchRuleType extends string> {
     private options: Node.Options
-    public static GOTO_SELF: Dialogue.GoTo.Self = 0
-
     /**
      * Identifies what should be done 
      * when entering a node / dialog
@@ -118,7 +118,7 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
 
         this.nodes = {} as {[node in NodeOption]: BaseNode<NodeOption, MatchRuleType>}
         console.log("Building dialogue:", id)
-        Object.keys(object).forEach((val) => {
+        Object.keys(object.nodes).forEach((val) => {
             console.log(" NODE >", val)
             this.nodes[val as NodeOption] = new BaseNode(object.nodes[val as NodeOption])
         })
@@ -184,17 +184,17 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
         // actual playing around with the nodes
         const _node = this.getNode(nodeId)
 
-        if (node === null) {
-            // NODE ENTER-ACTION
-            const nodeEnterActionId = _node.actionId('enter')
-            if (nodeEnterActionId !== undefined) 
-                this.nodeAct(nodeEnterActionId, actionData)
+        // NODE ENTER-ACTION
+        const nodeEnterActionId = _node.actionId('enter')
+        if (nodeEnterActionId !== undefined) 
+            this.nodeAct(nodeEnterActionId, actionData)
 
+        if (node === null) {
             return { 
                 output: _node.text,
 
                 // get the next node 
-                node: this.self.start
+                node: nodeId
             }
         }       
 
@@ -202,7 +202,6 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
         const preprocessId = _node.mutateId('preprocess')
         if (preprocessId !== undefined)
             _message = this.nodeMutate(preprocessId, _message)
-
 
         // get the goTo logic
         let goToNode: NodeOption | null = null
@@ -212,20 +211,23 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
 
             const dialogMatcher = this.matchers[_node.matcher]
             if (dialogMatcher === undefined) {
-                throw Error(`Node has matcher ('${_node.matcher}'), but matcher function is not create in dialogue`)
+                throw new Error(`Node has matcher ('${_node.matcher}'), but matcher function is not created with dialogue`)
             }
 
+            console.log("Matcher present:", _node.matcher)
             const _out: NodeOption | string | Dialogue.GoTo | null | void = dialogMatcher(_message, this.options, this.ac, matchCallback)
 
-            if (_out !== BaseNode.GOTO_SELF) {
+            
+            if (_out !== NODE_GOTO_SELF) {
                 goToNode = _node.next(_out === void 0 ? undefined : _out)
+                console.log("Pointing to the next node:", goToNode)
             } else {
-                goToNode = node
+                goToNode = nodeId
+                console.log("Pointing to self:", nodeId)
             }
-
-
         } else {
             goToNode = _node.next()
+            console.log("Missing Matcher", "Getting next", goToNode)
         }
 
         if (goToNode !== null) {
