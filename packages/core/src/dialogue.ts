@@ -69,10 +69,16 @@ export class BaseNode<Option extends string, MatchRuleType extends string> {
     next($?: string | null): Option | null {
         const { goTo = null } = this.object
 
+        // console.log("Node>>:", this.object)
+
         if ($ === null) { return null }
         if ($ === undefined) { return goTo as Option | null }
         
-        if (goTo === null || goTo === undefined) return null
+
+        // console.log("$: >", $)
+        // console.log("goTo: >", goTo)
+
+        if (goTo === null) return null
 
         // Convert dynamic to static node
         const out = dynNodeRegex.exec(goTo as string)
@@ -220,6 +226,7 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
 
             
             if (_out !== NODE_GOTO_SELF) {
+                // console.log("_out:", _out);
                 goToNode = _node.next(_out === void 0 ? undefined : _out)
                 // console.log("Pointing to the next node:", goToNode)
             } else {
