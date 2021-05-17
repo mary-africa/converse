@@ -33,6 +33,7 @@ export class BaseNode<Option extends string, MatchRuleType extends string> {
     get text(): string { return this.self.text }
     get object(): Dialogue.Node<Option, MatchRuleType>{ return this.self }
     get matcher(): MatchRuleType | null { return this.self.matcher !== undefined ? this.self.matcher : null }
+    get withOptions() { return this.self.with } 
 
     mutateId(at: Node.MutationType) { return this.mutatorIds[at] }
     actionId(on: Node.ActionType) { return this.actionIds[on] }
@@ -117,9 +118,9 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
         this.options = { id, verbose: true, ...(options) } 
 
         this.nodes = {} as {[node in NodeOption]: BaseNode<NodeOption, MatchRuleType>}
-        console.log("Building dialogue:", id)
+        // console.log("Building dialogue:", id)
         Object.keys(object.nodes).forEach((val) => {
-            console.log(" NODE >", val)
+            // console.log(" NODE >", val)
             this.nodes[val as NodeOption] = new BaseNode(object.nodes[val as NodeOption])
         })
 
@@ -214,20 +215,20 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
                 throw new Error(`Node has matcher ('${_node.matcher}'), but matcher function is not created with dialogue`)
             }
 
-            console.log("Matcher present:", _node.matcher)
-            const _out: NodeOption | string | Dialogue.GoTo | null | void = dialogMatcher(_message, this.options, this.ac, matchCallback)
+            // console.log("Matcher present:", _node.matcher)
+            const _out: NodeOption | string | Dialogue.GoTo | null | void = dialogMatcher(_message, _node.withOptions, this.ac, matchCallback)
 
             
             if (_out !== NODE_GOTO_SELF) {
                 goToNode = _node.next(_out === void 0 ? undefined : _out)
-                console.log("Pointing to the next node:", goToNode)
+                // console.log("Pointing to the next node:", goToNode)
             } else {
                 goToNode = nodeId
-                console.log("Pointing to self:", nodeId)
+                // console.log("Pointing to self:", nodeId)
             }
         } else {
             goToNode = _node.next()
-            console.log("Missing Matcher", "Getting next", goToNode)
+            // console.log("Missing Matcher", "Getting next", goToNode)
         }
 
         if (goToNode !== null) {

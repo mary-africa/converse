@@ -133,7 +133,7 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
                     // chat in the dialogue
                     const dialogue = this.dialogue(selectedDialogue)
                     
-                    console.log("dialogue :> ", sequenceDialogue)
+                    // console.log("dialogue :> ", sequenceDialogue)
     
                     // get dialogue
                     const out = dialogue.respond<any, AT, MatchCallback>(
