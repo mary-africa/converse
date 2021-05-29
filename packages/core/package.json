@@ -1,5 +1,5 @@
 {
-  "private": true,
+  "private": false,
   "name": "converse-core",
   "version": "0.3.2",
   "description": "Building conversational agents - one step at a time",
