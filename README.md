@@ -102,7 +102,7 @@ From the `ddo` shown above, here is an example of an action that is executed whe
 
 | converse-core | converse-nena |
 | ---------- | ---------------|
-| 0.3.0 | 0.2.1
+| 0.3.2 | 0.2.3
 ### Contributions
 
 Contributions currently can only be made by the members of [Mary.Africa](https://mary.africa).

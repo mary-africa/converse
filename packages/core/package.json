@@ -1,7 +1,7 @@
 {
   "private": false,
   "name": "converse-core",
-  "version": "0.3.2",
+  "version": "0.3.2-a",
   "description": "Building conversational agents - one step at a time",
   "main": "lib/index.js",
   "typings": "./typings",
@@ -20,7 +20,7 @@
     "dialogue"
   ],
   "author": "Kevin James",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/mary-africa/converse/issues"
   },
