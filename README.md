@@ -93,7 +93,7 @@ From the `ddo` shown above, here is an example of an action that is executed whe
 - **Converse Nena** - [`converse-nena`](packages/nena)
   This is the agent that makes use of Nena to give the agent NLP functionalities
 
-  To install (_future_):
+  To install:
   ```
   yarn add converse-core converse-nena
   ```
