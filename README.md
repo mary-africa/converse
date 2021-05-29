@@ -85,15 +85,12 @@ From the `ddo` shown above, here is an example of an action that is executed whe
 #### Packages inside:
 - **Converse Core** - [`converse-core`](packages/core)
   This is the `core` package that builds the conversational agents in a basic form. Any modification would be an extension from this class
-  To install (_future_):
   ```
   yarn add converse-core
   ```
 
 - **Converse Nena** - [`converse-nena`](packages/nena)
-  This is the agent that makes use of Nena to give the agent NLP functionalities
-
-  To install:
+  This is the agent that makes use of Nena API to give the agent NLP functionalities
   ```
   yarn add converse-core converse-nena
   ```
