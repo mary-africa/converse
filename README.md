@@ -2,10 +2,12 @@
 
 Making conversational agents - one step at a time
 
+
 ### Overview
 
+<h6>[ Docs are be a bit outdated ]</h6>
 Created by [Mary.Africa](https://mary.africa), this tool makes it possible to create conversational agents of any form.
-From purely-rule based to full-fledged NLP enhanced 
+From purely-rule based to full-fledged NLP enhanced.
 
 ### Terminologies:
 
