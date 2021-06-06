@@ -189,8 +189,8 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
             }
         }
 
-        console.warn(`Missing response text and dialogue for intent [${matchedIntent}]`)
-        console.warn("Defaulting to 'fallbackText'")
+        // console.warn(`Missing response text and dialogue for intent [${matchedIntent}]`)
+        // console.warn("Defaulting to 'fallbackText'")
 
         // output fallback text
         return { output: this.fallbackText, state: {} }
@@ -216,8 +216,10 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
             _agent: Readonly<{ context: Agent.Context, config: Agent.Config<MatchRuleType, AgentExtendedConfig> }>
         ) => Promise<null | Intent>
     ) {
-       if (this.matcher !== undefined)
-            console.warn(`Replacing an existing matcher`)
+        // TODO: Enforce this not to happen is already set.
+        //  to establish proper rules for creating thesee things
+    //    if (this.matcher !== undefined)
+    //         console.warn(`Replacing an existing matcher`)
 
         this.matcher = matcher
     }
@@ -259,7 +261,7 @@ export default class BaseAgent<Intent extends string, DialogueKey extends string
         if (this.config.enableExactMatchRule) {
             return this.exactMatch(mutatedInput, this.getMatchItemList())
         } else {
-            console.warn(`Agent is missing a matcher Function, and configuration for agent has 'enableExactMatchRule=false'. This will default to returning 'nul'`)
+            // console.warn(`Agent is missing a matcher Function, and configuration for agent has 'enableExactMatchRule=false'. This will default to returning 'nul'`)
         }
 
         // Null means there is not intent that is 

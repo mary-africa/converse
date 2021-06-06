@@ -31,6 +31,7 @@
   "devDependencies": {
     "@types/jest": "^26.0.23",
     "@types/node": "^14.14.37",
+    "bunyan": "^1.8.15",
     "jest": "^26.6.3",
     "ts-node": "^9.1.1",
     "typescript": "^4.2.3"

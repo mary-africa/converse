@@ -66,29 +66,40 @@ export class BaseNode<Option extends string, MatchRuleType extends string> {
      * @param $ 
      * @returns the next dialogue to visit
      */
-    next($?: string | null): Option | null {
+    next($?: string | null | undefined): Option | null {
+        // console.log("Next entry:", $)
         const { goTo = null } = this.object
 
         // console.log("Node>>:", this.object)
 
         if ($ === null) { return null }
-        if ($ === undefined) { return goTo as Option | null }
-        
 
-        // console.log("$: >", $)
-        // console.log("goTo: >", goTo)
+        if (goTo !== null) {
+            // console.log("$: >", $)
+            // console.log("goTo: >", goTo)
+            if (goTo.toString().includes("$") && $ !== undefined) {
+                // console.log("HERREEE!!!!");  
+                if (goTo === '$') {
+                    return $ as Option
+                } else {
+                    // Convert dynamic to static node
+                    const out = dynNodeRegex.exec(goTo as string)
+            
+                    // the next node. doesn't have a 
+                    // dynamically rendable node key
+                    if (out === null) return goTo as Option
+            
+                    // replace '$' with value as next node
+                    return (goTo as string).replace(replaceRegex, $) as unknown as Option
+                }
+            } else {
+                if ($ === undefined && goTo.toString().includes("$")) {
+                    throw new Error(`Missing argument for the goTo value ${goTo}`)
+                }
+            }
+        }
 
-        if (goTo === null) return null
-
-        // Convert dynamic to static node
-        const out = dynNodeRegex.exec(goTo as string)
-
-        // the next node. doesn't have a 
-        // dynamically rendable node key
-        if (out === null) return goTo as Option
-
-        // replace '$' with value as next node
-        return (goTo as string).replace(replaceRegex, $) as unknown as Option
+        return goTo as Option | null
     }
     
 }
@@ -216,6 +227,7 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
         if (_node.matcher !== null) {
             // Using matcher to make a decision on the input
 
+            // console.log("Node matcher:", _node.matcher)
             const dialogMatcher = this.matchers[_node.matcher]
             if (dialogMatcher === undefined) {
                 throw new Error(`Node has matcher ('${_node.matcher}'), but matcher function is not created with dialogue`)
@@ -223,10 +235,10 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
 
             // console.log("Matcher present:", _node.matcher)
             const _out: NodeOption | string | Dialogue.GoTo | null | void = dialogMatcher(_message, _node.withOptions, this.ac, matchCallback)
+            // console.log("_out:", _out);
 
             
-            if (_out !== NODE_GOTO_SELF) {
-                // console.log("_out:", _out);
+            if (_out !== NODE_GOTO_SELF) { 
                 goToNode = _node.next(_out === void 0 ? undefined : _out)
                 // console.log("Pointing to the next node:", goToNode)
             } else {
@@ -241,8 +253,8 @@ export default class BaseDialogue<DialogueKey extends string, NodeOption extends
         if (goToNode !== null) {
             // check if the node exist
             if (!(goToNode in this.nodes)) {
-                console.warn(`The node '${goToNode}' doesn't exit in this dialogue`)
-                console.warn('Resetting to NULL')
+                // console.warn(`The node '${goToNode}' doesn't exit in this dialogue`)
+                // console.warn('Resetting to NULL')
                 // reset to null
                 goToNode = null
             }
